@@ -1,0 +1,8 @@
+/.venv/
+/.ipynb_checkpoints/
+.idea/
+__pycache__/
+ml/10. ДЖКХ + ДИТ/13. Адресный реестр объектов недвижимости города Москвы.xlsx
+ml/10. ДЖКХ + ДИТ/11.Выгрузка_ОДПУ_отопление_ВАО_20240522.xlsx
+ml/.ipynb_checkpoints/eda-checkpoint.ipynb
+.gitignore.swp
