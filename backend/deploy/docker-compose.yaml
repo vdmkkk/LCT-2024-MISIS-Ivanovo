@@ -1,0 +1,32 @@
+services:
+  app:
+    build:
+      context: ../
+      dockerfile: deploy/app.Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres-database:
+        condition: service_healthy
+      redis-database:
+        condition: service_healthy
+    volumes:
+      - ../../data/app:/app/cmd/log
+
+  postgres-database:
+    image: postgres:latest
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -h localhost -p 5432" ]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - ../../data/postgres:/var/lib/postgresql/data
