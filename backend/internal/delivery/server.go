@@ -1,0 +1,37 @@
+package delivery
+
+import (
+	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
+	"lct/internal/delivery/docs"
+	"lct/internal/delivery/handlers"
+	"lct/internal/delivery/middleware"
+	"lct/internal/repository"
+	"lct/internal/service"
+	"lct/pkg/log"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+)
+
+func Start(db *sqlx.DB, logger *log.Logs) {
+	r := gin.Default()
+
+	docs.SwaggerInfo.BasePath = "/"
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	mdw := middleware.InitMiddleware(logger)
+
+	r.Use(mdw.CORSMiddleware())
+
+	geoDataRepo := repository.InitGeoDataRepo(db)
+	geoDataService := service.InitGeoDataService(geoDataRepo, logger)
+	geoDataHandler := handlers.InitGeoDataHandler(geoDataService)
+
+	r.GET("/geo", geoDataHandler.GetByCount)
+
+	if err := r.Run("0.0.0.0:8080"); err != nil {
+		panic(fmt.Sprintf("error running client: %v", err.Error()))
+	}
+}
