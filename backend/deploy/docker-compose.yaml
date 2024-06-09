@@ -8,8 +8,6 @@ services:
     depends_on:
       postgres-database:
         condition: service_healthy
-      redis-database:
-        condition: service_healthy
     volumes:
       - ../../data/app:/app/cmd/log
 
