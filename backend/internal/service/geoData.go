@@ -36,3 +36,13 @@ func (g geoDataService) GetByCount(ctx context.Context, count int) ([]models.Geo
 	}
 	return geoDatas, nil
 }
+
+func (g geoDataService) GetByUNOM(ctx context.Context, unom int) (models.GeoData, error) {
+	geoData, err := g.repo.GetByUNOM(ctx, unom)
+	if err != nil {
+		g.logs.Error(err.Error())
+		return models.GeoData{}, err
+	}
+
+	return geoData, nil
+}

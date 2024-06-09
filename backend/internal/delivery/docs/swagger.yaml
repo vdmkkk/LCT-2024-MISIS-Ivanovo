@@ -33,4 +33,36 @@ paths:
       summary: Get geo datas
       tags:
       - geo
+  /geo/unom:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: UNOM
+        in: query
+        name: unom
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully
+          schema:
+            type: integer
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get geo data by UNOM
+      tags:
+      - geo
 swagger: "2.0"

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	"lct/internal/models"
 )
@@ -73,4 +74,25 @@ func (g geoDataRepo) GetByCount(ctx context.Context, count int) ([]models.GeoDat
 	}
 
 	return geoDatas, nil
+}
+
+func (g geoDataRepo) GetByUNOM(ctx context.Context, unom int) (models.GeoData, error) {
+	row := g.db.QueryRowContext(ctx, `SELECT id, unom, to_json(coordinates) FROM geolocations WHERE unom = $1;`, unom)
+
+	var geoData models.GeoData
+	var coordinatesJSON []byte
+
+	err := row.Scan(&geoData.ID, &geoData.Unom, &coordinatesJSON)
+	if err != nil {
+		return models.GeoData{}, err
+	}
+
+	fmt.Printf("Coordinates JSON: %s\n", coordinatesJSON)
+
+	err = json.Unmarshal(coordinatesJSON, &geoData.Coordinates)
+	if err != nil {
+		return models.GeoData{}, err
+	}
+
+	return geoData, nil
 }
