@@ -2,7 +2,8 @@
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS geolocations (
   id SERIAL PRIMARY KEY,
-  data JSONB
+  unom INTEGER UNIQUE,
+  coordinates DOUBLE PRECISION[][][]
 );
 -- +goose StatementEnd
 
