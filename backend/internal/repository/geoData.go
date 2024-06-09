@@ -16,6 +16,17 @@ func InitGeoDataRepo(db *sqlx.DB) GeoData {
 	return geoDataRepo{db: db}
 }
 
+func flatMap(input [][][][]float64) *[][][]float64 {
+	output := make([][][]float64, 0, len(input))
+	for _, firstDimVal := range input {
+		for _, secondDimVal := range firstDimVal {
+			output = append(output, secondDimVal)
+		}
+	}
+
+	return &output
+}
+
 func (g geoDataRepo) GetAll(ctx context.Context) ([]models.GeoData, error) {
 	rows, err := g.db.QueryContext(ctx, `SELECT id, unom, to_json(coordinates) FROM geolocations;`)
 	if err != nil {
@@ -32,7 +43,13 @@ func (g geoDataRepo) GetAll(ctx context.Context) ([]models.GeoData, error) {
 		}
 		err = json.Unmarshal(coordinatesJSON, &geoData.Coordinates)
 		if err != nil {
-			return nil, err
+			var coordinatesFourDims [][][][]float64
+			err = json.Unmarshal(coordinatesJSON, &coordinatesFourDims)
+			if err != nil {
+				return nil, err
+			}
+
+			geoData.Coordinates = *flatMap(coordinatesFourDims)
 		}
 
 		geoDatas = append(geoDatas, geoData)
@@ -60,9 +77,16 @@ func (g geoDataRepo) GetByCount(ctx context.Context, count int) ([]models.GeoDat
 		if err != nil {
 			return nil, err
 		}
+
 		err = json.Unmarshal(coordinatesJSON, &geoData.Coordinates)
 		if err != nil {
-			return nil, err
+			var coordinatesFourDims [][][][]float64
+			err = json.Unmarshal(coordinatesJSON, &coordinatesFourDims)
+			if err != nil {
+				return nil, err
+			}
+
+			geoData.Coordinates = *flatMap(coordinatesFourDims)
 		}
 
 		geoDatas = append(geoDatas, geoData)
@@ -74,17 +98,6 @@ func (g geoDataRepo) GetByCount(ctx context.Context, count int) ([]models.GeoDat
 	}
 
 	return geoDatas, nil
-}
-
-func flatMap(input [][][][]float64) *[][][]float64 {
-	output := make([][][]float64, 0, len(input))
-	for _, firstDimVal := range input {
-		for _, secondDimVal := range firstDimVal {
-			output = append(output, secondDimVal)
-		}
-	}
-
-	return &output
 }
 
 func (g geoDataRepo) GetByUNOM(ctx context.Context, unom int) (models.GeoData, error) {
