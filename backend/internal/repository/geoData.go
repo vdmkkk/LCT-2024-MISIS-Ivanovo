@@ -76,6 +76,17 @@ func (g geoDataRepo) GetByCount(ctx context.Context, count int) ([]models.GeoDat
 	return geoDatas, nil
 }
 
+func flatMap(input [][][][]float64) *[][][]float64 {
+	output := make([][][]float64, 0, len(input))
+	for _, firstDimVal := range input {
+		for _, secondDimVal := range firstDimVal {
+			output = append(output, secondDimVal)
+		}
+	}
+
+	return &output
+}
+
 func (g geoDataRepo) GetByUNOM(ctx context.Context, unom int) (models.GeoData, error) {
 	row := g.db.QueryRowContext(ctx, `SELECT id, unom, to_json(coordinates) FROM geolocations WHERE unom = $1;`, unom)
 
@@ -91,7 +102,13 @@ func (g geoDataRepo) GetByUNOM(ctx context.Context, unom int) (models.GeoData, e
 
 	err = json.Unmarshal(coordinatesJSON, &geoData.Coordinates)
 	if err != nil {
-		return models.GeoData{}, err
+		var coordinatesFourDims [][][][]float64
+		err = json.Unmarshal(coordinatesJSON, &coordinatesFourDims)
+		if err != nil {
+			return models.GeoData{}, err
+		}
+
+		geoData.Coordinates = *flatMap(coordinatesFourDims)
 	}
 
 	return geoData, nil
