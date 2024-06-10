@@ -16,5 +16,5 @@ type Building interface {
 }
 
 type Ctp interface {
-	GetByCTPID(ctx context.Context, ctpID string)
+	GetByCTPID(ctx context.Context, ctpID string) (models.Ctp, error)
 }

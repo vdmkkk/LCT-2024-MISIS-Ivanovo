@@ -12,7 +12,7 @@ type Building struct {
 	Area                       null.String   `json:"area"`                          // Area as TEXT.
 	ProjectSeries              null.String   `json:"project_series"`                // Project series as TEXT.
 	NumberOfFloors             null.Float    `json:"number_of_floors"`              // Number of floors as FLOAT8.
-	NumberOfEntrances          null.Float    `json:"number_of_entrances""`          // Number of entrances as FLOAT8.
+	NumberOfEntrances          null.Float    `json:"number_of_entrances"`           // Number of entrances as FLOAT8.
 	NumberOfApartments         null.Float    `json:"number_of_apartments"`          // Number of apartments as FLOAT8.
 	TotalArea                  null.Float    `json:"total_area"`                    // Total area as FLOAT8.
 	TotalResidentialArea       null.Float    `json:"total_residential_area"`        // Total residential area as FLOAT8.

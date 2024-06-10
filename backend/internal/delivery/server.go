@@ -38,6 +38,12 @@ func Start(db *sqlx.DB, logger *log.Logs) {
 
 	r.GET("/building", buildingHandler.GetByUNOM)
 
+	ctpRepo := repository.InitCtpRepo(db)
+	ctpServ := service.InitCtpService(ctpRepo, logger)
+	ctpHandler := handlers.InitCtpHandler(ctpServ)
+
+	r.GET("/ctp", ctpHandler.GetByCTPID)
+
 	if err := r.Run("0.0.0.0:8080"); err != nil {
 		panic(fmt.Sprintf("error running client: %v", err.Error()))
 	}

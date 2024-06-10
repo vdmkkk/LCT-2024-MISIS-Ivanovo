@@ -33,6 +33,38 @@ paths:
       summary: Get building
       tags:
       - building
+  /ctp:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: ctp_id STRING
+        in: query
+        name: ctp_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully
+          schema:
+            type: integer
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get ctp
+      tags:
+      - ctp
   /geo:
     get:
       consumes:
