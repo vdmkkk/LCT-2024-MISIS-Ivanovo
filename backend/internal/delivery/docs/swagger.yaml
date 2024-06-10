@@ -1,6 +1,38 @@
 info:
   contact: {}
 paths:
+  /building:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: unom
+        in: query
+        name: unom
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully
+          schema:
+            type: integer
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get building
+      tags:
+      - building
   /geo:
     get:
       consumes:

@@ -32,6 +32,12 @@ func Start(db *sqlx.DB, logger *log.Logs) {
 	r.GET("/geo", geoDataHandler.GetByCount)
 	r.GET("/geo/unom", geoDataHandler.GetByUNOM)
 
+	buildingRepo := repository.InitBuildingRepo(db)
+	buildingServ := service.InitBuildingService(buildingRepo, logger)
+	buildingHandler := handlers.InitBuildingHandler(buildingServ)
+
+	r.GET("/building", buildingHandler.GetByUNOM)
+
 	if err := r.Run("0.0.0.0:8080"); err != nil {
 		panic(fmt.Sprintf("error running client: %v", err.Error()))
 	}
