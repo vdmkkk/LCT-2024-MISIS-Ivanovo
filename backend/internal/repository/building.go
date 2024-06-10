@@ -110,8 +110,6 @@ func (b buildingRepo) GetByUNOM(ctx context.Context, unom int) (models.Building,
 		&building.Status,
 		&geoDataJSON,
 		&geoDataCenterJSON,
-		&building.GeoData,
-		&building.GeoDataCenter,
 		&building.IDODS,
 		&building.PhoneNumber)
 	if err != nil {
