@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/jmoiron/sqlx"
 	"lct/internal/models"
+	"strings"
 )
 
 type buildingRepo struct {
@@ -137,6 +138,9 @@ func (b buildingRepo) GetByUNOM(ctx context.Context, unom int) (models.Building,
 
 	err = json.Unmarshal(centerJSON, &building.CtpCenter)
 	if err != nil {
+		if strings.Contains(err.Error(), "unexpected end") {
+			return building, nil
+		}
 		return models.Building{}, err
 	}
 
