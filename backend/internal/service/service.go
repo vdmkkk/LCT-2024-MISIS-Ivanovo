@@ -6,8 +6,10 @@ import (
 )
 
 type GeoData interface {
-	GetByUNOM(ctx context.Context, unom int) (models.GeoData, error)
-	GetByCount(ctx context.Context, count int) ([]models.GeoData, error)
+	GetByUNOM(ctx context.Context, unom int) (models.BuildingGeoData, error)
+	GetByCount(ctx context.Context, count int) ([]models.BuildingGeoData, error)
+	GetByFilter(ctx context.Context, filters models.GeoDataFilter) (map[string]models.ResultGeoData,
+		map[string]map[string]models.ResultGeoData, error)
 }
 
 type Building interface {

@@ -211,6 +211,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/geo/by_filters": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "geo"
+                ],
+                "summary": "Get by filter",
+                "parameters": [
+                    {
+                        "description": "Filters",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.GeoDataFilter"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/geo/unom": {
             "get": {
                 "consumes": [
@@ -257,6 +308,25 @@ const docTemplate = `{
                             }
                         }
                     }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.GeoDataFilter": {
+            "type": "object",
+            "properties": {
+                "consumer_type": {
+                    "type": "integer"
+                },
+                "district": {
+                    "type": "boolean"
+                },
+                "heat_network": {
+                    "type": "integer"
+                },
+                "tec": {
+                    "type": "boolean"
                 }
             }
         }

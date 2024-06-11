@@ -31,6 +31,7 @@ func Start(db *sqlx.DB, logger *log.Logs) {
 
 	r.GET("/geo", geoDataHandler.GetByCount)
 	r.GET("/geo/unom", geoDataHandler.GetByUNOM)
+	r.PUT("/geo/by_filters", geoDataHandler.GetByFilter)
 
 	buildingRepo := repository.InitBuildingRepo(db)
 	buildingServ := service.InitBuildingService(buildingRepo, logger)
