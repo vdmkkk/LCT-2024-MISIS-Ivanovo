@@ -12,6 +12,7 @@ type GeoData interface {
 
 type Building interface {
 	GetByUNOM(ctx context.Context, unom int) (models.Building, error)
+	GetByCTPID(ctx context.Context, ctpID string) ([]models.Building, error)
 }
 
 type Ctp interface {

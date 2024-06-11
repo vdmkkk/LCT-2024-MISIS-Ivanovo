@@ -28,3 +28,13 @@ func (b buidlingService) GetByUNOM(ctx context.Context, unom int) (models.Buildi
 
 	return building, nil
 }
+
+func (b buidlingService) GetByCTPID(ctx context.Context, ctpID string) ([]models.Building, error) {
+	buildings, err := b.repo.GetByCTPID(ctx, ctpID)
+	if err != nil {
+		b.logs.Error(err.Error())
+		return nil, err
+	}
+
+	return buildings, nil
+}

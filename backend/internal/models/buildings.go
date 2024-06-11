@@ -16,7 +16,7 @@ type Building struct {
 	NumberOfApartments         null.Float    `json:"number_of_apartments"`          // Number of apartments as FLOAT8.
 	TotalArea                  null.Float    `json:"total_area"`                    // Total area as FLOAT8.
 	TotalResidentialArea       null.Float    `json:"total_residential_area"`        // Total residential area as FLOAT8.
-	TotalNonResidentialArea    null.Float    `json:"total_non_residential_area"`    // Total non-residential area as TEXT (using null.Float for potential NULL value).
+	TotalNonResidentialArea    null.String   `json:"total_non_residential_area"`    // Total non-residential area as TEXT (using null.Float for potential NULL value).
 	WearAndTearBTI             null.String   `json:"wear_and_tear_bti"`             // Wear and tear BTI as TEXT.
 	WallMaterials              null.String   `json:"wall_materials"`                // Wall materials as TEXT.
 	EmergencyStatus            null.Float    `json:"emergency_status"`              // Emergency status as FLOAT8.

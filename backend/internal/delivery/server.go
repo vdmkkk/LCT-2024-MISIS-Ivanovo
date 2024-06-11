@@ -37,6 +37,7 @@ func Start(db *sqlx.DB, logger *log.Logs) {
 	buildingHandler := handlers.InitBuildingHandler(buildingServ)
 
 	r.GET("/building", buildingHandler.GetByUNOM)
+	r.GET("/building/by_ctp", buildingHandler.GetByCTPID)
 
 	ctpRepo := repository.InitCtpRepo(db)
 	ctpServ := service.InitCtpService(ctpRepo, logger)
