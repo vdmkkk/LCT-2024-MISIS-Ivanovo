@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Masterminds/squirrel"
-	"github.com/guregu/null/v5"
 	"github.com/jmoiron/sqlx"
 	"lct/internal/models"
+	"strings"
 )
 
 type geoDataRepo struct {
@@ -46,43 +46,133 @@ func (g geoDataRepo) GetCtpGeoData(ctx context.Context, ctpID string) (models.Ct
 	return ctpGeoData, nil
 }
 
-func (g geoDataRepo) GetByOneFilter(ctx context.Context, filters models.GeoDataFilter) (map[string]models.ResultGeoData, error) {
+var mkd = []string{
+	"многоквартирный дом",
+	"блокированный жилой дом",
+}
+
+var social = []string{
+	"общежитие",
+	"детский дом культуры",
+	"школьное",
+	"отделение милиции",
+	"ясли",
+	"стоматологическая поликлиника",
+	"учебно-воспитательное",
+	"учреждение,мастерские",
+	"музей",
+	"детское дошкольное учреждение",
+	"школа-интернат",
+	"учебно-воспитателный комбинат",
+	"спортивный павильон",
+	"центр обслуживания",
+	"библиотека",
+	"консультативная поликлинника",
+	"ясли-сад",
+	"центр реабилитации",
+	"гимназия",
+	"наркологический диспансер",
+	"отделение судебно-медицинской экспертизы",
+	"блок-пристройка начальных классов",
+	"лаборатория",
+	"детский санаторий",
+	"техническое училище",
+	"спальный корпус",
+	"спортивный корпус",
+	"спецшкола",
+	"клуб",
+	"терапевтический корпус",
+	"профтехучилище",
+	"учебно-производственный комбинат",
+	"хирургический корпус",
+	"колледж",
+	"подстанция скорой помощи",
+	"учреждение",
+	"административное",
+	"выставочный павильон",
+	"школа",
+	"научное",
+	"плавательный бассейн",
+	"лечебный корпус",
+	"лечебное",
+	"интернат",
+	"санаторий",
+	"музыкальная школа",
+	"столовая",
+	"больница",
+	"пункт охраны",
+	"медучилище",
+	"культурно-просветительное",
+	"детсад-ясли",
+	"гостиница",
+	"кафе",
+	"физкультурно-оздоровительный комплекс",
+	"дом детского творчества",
+	"спортивная школа",
+	"детский сад",
+	"спортивный клуб",
+	"поликлиника",
+	"ПТУ",
+	"дом ребенка",
+	"административно-бытовой",
+	"пищеблок",
+	"прачечная",
+	"детские ясли",
+	"морг",
+	"родильный дом",
+	"станция скорой помощи",
+	"учебный корпус",
+	"училище",
+	"техникум",
+	"школа-сад",
+	"учебное",
+	"диспансер",
+	"лечебно-санитарное",
+	"спортивный комплекс",
+	"бассейн и спортзал",
+	"спортивное",
+}
+
+var industrial = []string{
+	"нежилое",
+	"гараж",
+	"ЦТП",
+	"уборная",
+	"хранилище",
+	"склад",
+	"архив",
+	"дезинфекционная камера",
+	"кухня клиническая",
+	"хозблок",
+	"трансформаторная подстанция",
+	"овощехранилище",
+	"нежилое,ГПТУ",
+}
+
+func (g geoDataRepo) GetByFiltersWithBuildings(ctx context.Context, filters models.GeoDataFilter) (map[string]map[string]models.ResultGeoData, error) {
 	psql := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
-
-	var queryBuilder squirrel.SelectBuilder
-
-	if filters.District {
-		queryBuilder = psql.Select("buildings.area, buildings.unom", "to_json(buildings.geo_data), ctps.ctp_id").
-			From("buildings").
-			LeftJoin("ctps ON buildings.ctp = ctps.ctp_id").
-			OrderBy("buildings.area")
-	} else if filters.Tec {
-		queryBuilder = psql.Select("ctps.source, buildings.unom", "to_json(buildings.geo_data), ctps.ctp_id").
-			From("buildings").
-			LeftJoin("ctps ON buildings.ctp = ctps.ctp_id").
-			Where("ctps.source LIKE ?", "ТЭЦ%"). // maybe 'ТЭЦ%' ??
-			OrderBy("ctps.source")
-	} else {
-		return nil, fmt.Errorf("error no map key filters provided")
-	}
+	queryBuilder := psql.Select("b.area", "b.unom", "to_json(b.geo_data)", "c.ctp_id", "c.source", "to_json(c.center)").
+		From("buildings b").LeftJoin("ctps c on b.ctp = c.ctp_id")
 
 	switch filters.HeatNetwork {
-	case 0:
-		break
 	case 1:
-		queryBuilder = queryBuilder.Where("ctps.type = ?", "ИТП") // maybe 'ИТП' ??
+		queryBuilder = queryBuilder.Where("c.type = ?", "ИТП")
 	case 2:
-		queryBuilder = queryBuilder.Where("ctps.type = ?", "ЦТП") // maybe 'ЦТП' ??
+		queryBuilder = queryBuilder.Where("c.type = ?", "ЦТП")
+	case 3:
+		queryBuilder = queryBuilder.Where("c.type = ? AND c.source LIKE ?", "ЦТП", "ТЭЦ%")
 	}
 
 	switch filters.ConsumerType {
 	case 1:
-		break
+		queryBuilder = queryBuilder.Where(squirrel.Eq{"b.purpose": mkd})
 	case 2:
-		break
+		queryBuilder = queryBuilder.Where("b.purpose IN (?)", social)
 	case 3:
-		break
+		queryBuilder = queryBuilder.Where("b.purpose IN (?)", industrial)
 	}
+
+	res := map[string]map[string]models.ResultGeoData{}
 
 	query, args, err := queryBuilder.ToSql()
 	if err != nil {
@@ -94,68 +184,86 @@ func (g geoDataRepo) GetByOneFilter(ctx context.Context, filters models.GeoDataF
 		return nil, err
 	}
 
-	res := map[string]models.ResultGeoData{}
-	var buildingsGeo []models.BuildingGeoData
-	var ctpsGeo []models.CtpGeoData
-	var ctpsIds []string
-	var prevKey string
+	ctpIDs := map[string]struct{}{}
 	for rows.Next() {
-		var buildingGeo models.BuildingGeoData
+		var buildingGeo models.BuildingWithMetaGeoData
+		var ctpGeo models.CtpWithMetaGeoData
 		var coordinatesJSON []byte
-		var ctpID null.String
-		var ctpGeo models.CtpGeoData
-		var key string
+		var centerJSON []byte
 
-		err = rows.Scan(&key, &buildingGeo.Unom, &coordinatesJSON, &ctpID)
+		err = rows.Scan(&buildingGeo.Area, &buildingGeo.Unom, &coordinatesJSON, &ctpGeo.CtpID, &ctpGeo.Source, &centerJSON)
 		if err != nil {
 			return nil, err
 		}
 
-		if ctpID.Valid {
-			if !contains(ctpsIds, ctpID.String) {
-				ctpsIds = append(ctpsIds, ctpID.String)
-				ctpGeo, err = g.GetCtpGeoData(ctx, ctpID.String)
-				if err != nil {
-					return nil, err
-				}
-			}
+		if !buildingGeo.Area.Valid || buildingGeo.Area.String == "" {
+			buildingGeo.Area.SetValid("null")
+		}
+		if !ctpGeo.CtpID.Valid || ctpGeo.CtpID.String == "" {
+			ctpGeo.CtpID.SetValid("null")
+		}
+		if !ctpGeo.Source.Valid || ctpGeo.Source.String == "" {
+			ctpGeo.Source.SetValid("null")
 		}
 
 		err = json.Unmarshal(coordinatesJSON, &buildingGeo.Coordinates)
 		if err != nil {
-			return nil, err
+			var coordinatesFourDims [][][][]float64
+			err = json.Unmarshal(coordinatesJSON, &coordinatesFourDims)
+			if err != nil {
+				return nil, err
+			}
+
+			buildingGeo.Coordinates = *FlatMap(coordinatesFourDims)
 		}
 
-		if prevKey == "" {
-			prevKey = key
+		err = json.Unmarshal(centerJSON, &ctpGeo.Center)
+		if err != nil {
+			if !strings.Contains(err.Error(), "unexpected") {
+				return nil, err
+			}
 		}
 
-		if prevKey == key {
-			buildingsGeo = append(buildingsGeo, buildingGeo)
-			if ctpGeo.CtpID != "" {
-				ctpsGeo = append(ctpsGeo, ctpGeo)
+		var outerKey string
+		if !filters.Tec || !filters.District {
+			outerKey = "all"
+		} else {
+			outerKey = ctpGeo.Source.String
+		}
+
+		var innerKey string
+		if filters.District {
+			innerKey = buildingGeo.Area.String
+		} else if filters.Tec {
+			innerKey = ctpGeo.Source.String
+		}
+		if _, ok := res[outerKey]; !ok {
+			res[outerKey] = map[string]models.ResultGeoData{}
+		}
+		if _, ok := res[outerKey][innerKey]; !ok {
+			res[outerKey][innerKey] = models.ResultGeoData{
+				Buildings: []models.BuildingWithMetaGeoData{buildingGeo},
+				Ctps:      []models.CtpWithMetaGeoData{},
+			}
+			if ctpGeo.CtpID.Valid {
+				if _, ok := ctpIDs[ctpGeo.CtpID.String]; !ok {
+					elem := res[outerKey][innerKey]
+					elem.Ctps = append(elem.Ctps, ctpGeo)
+					res[outerKey][innerKey] = elem
+					ctpIDs[ctpGeo.CtpID.String] = struct{}{}
+				}
 			}
 		} else {
-			if filters.HeatNetwork == 3 {
-				buildingsGeo = nil
-			}
-
-			if prevKey == "" {
-				res["null"] = models.ResultGeoData{
-					Buildings: buildingsGeo,
-					Ctps:      ctpsGeo,
+			elem := res[outerKey][innerKey]
+			elem.Buildings = append(elem.Buildings, buildingGeo)
+			res[outerKey][innerKey] = elem
+			if ctpGeo.CtpID.Valid {
+				if _, ok := ctpIDs[ctpGeo.CtpID.String]; !ok {
+					elem := res[outerKey][innerKey]
+					elem.Ctps = append(elem.Ctps, ctpGeo)
+					res[outerKey][innerKey] = elem
+					ctpIDs[ctpGeo.CtpID.String] = struct{}{}
 				}
-			} else {
-				res[prevKey] = models.ResultGeoData{
-					Buildings: buildingsGeo,
-					Ctps:      ctpsGeo,
-				}
-			}
-
-			prevKey = key
-			buildingsGeo = []models.BuildingGeoData{buildingGeo}
-			if ctpGeo.CtpID != "" {
-				ctpsGeo = []models.CtpGeoData{ctpGeo}
 			}
 		}
 	}
@@ -177,7 +285,7 @@ func InitGeoDataRepo(db *sqlx.DB) GeoData {
 	return geoDataRepo{db: db}
 }
 
-func flatMap(input [][][][]float64) *[][][]float64 {
+func FlatMap(input [][][][]float64) *[][][]float64 {
 	output := make([][][]float64, 0, len(input))
 	for _, firstDimVal := range input {
 		for _, secondDimVal := range firstDimVal {
@@ -189,7 +297,7 @@ func flatMap(input [][][][]float64) *[][][]float64 {
 }
 
 func (g geoDataRepo) GetAll(ctx context.Context) ([]models.BuildingGeoData, error) {
-	rows, err := g.db.QueryContext(ctx, `SELECT id, unom, to_json(coordinates) FROM geolocations;`)
+	rows, err := g.db.QueryContext(ctx, `SELECT unom, to_json(coordinates) FROM geolocations;`)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +318,7 @@ func (g geoDataRepo) GetAll(ctx context.Context) ([]models.BuildingGeoData, erro
 				return nil, err
 			}
 
-			geoData.Coordinates = *flatMap(coordinatesFourDims)
+			geoData.Coordinates = *FlatMap(coordinatesFourDims)
 		}
 
 		geoDatas = append(geoDatas, geoData)
@@ -247,7 +355,7 @@ func (g geoDataRepo) GetByCount(ctx context.Context, count int) ([]models.Buildi
 				return nil, err
 			}
 
-			geoData.Coordinates = *flatMap(coordinatesFourDims)
+			geoData.Coordinates = *FlatMap(coordinatesFourDims)
 		}
 
 		geoDatas = append(geoDatas, geoData)
@@ -282,7 +390,7 @@ func (g geoDataRepo) GetByUNOM(ctx context.Context, unom int) (models.BuildingGe
 			return models.BuildingGeoData{}, err
 		}
 
-		geoData.Coordinates = *flatMap(coordinatesFourDims)
+		geoData.Coordinates = *FlatMap(coordinatesFourDims)
 	}
 
 	return geoData, nil

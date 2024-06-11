@@ -48,14 +48,11 @@ func (g geoDataService) GetByUNOM(ctx context.Context, unom int) (models.Buildin
 }
 
 func (g geoDataService) GetByFilter(ctx context.Context, filters models.GeoDataFilter) (map[string]models.ResultGeoData, map[string]map[string]models.ResultGeoData, error) {
-	if filters.Tec && filters.District {
-		panic("IMPLEMENT ME")
-	} else {
-		res, err := g.repo.GetByOneFilter(ctx, filters)
-		if err != nil {
-			g.logs.Error(err.Error())
-			return nil, nil, err
-		}
-		return res, nil, nil
+	res, err := g.repo.GetByFiltersWithBuildings(ctx, filters)
+	if err != nil {
+		g.logs.Error(err.Error())
+		return nil, nil, err
 	}
+	return nil, res, nil
+
 }
