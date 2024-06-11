@@ -1,3 +1,15 @@
+definitions:
+  models.GeoDataFilter:
+    properties:
+      consumer_type:
+        type: integer
+      district:
+        type: boolean
+      heat_network:
+        type: integer
+      tec:
+        type: boolean
+    type: object
 info:
   contact: {}
 paths:
@@ -127,6 +139,39 @@ paths:
               type: string
             type: object
       summary: Get geo datas
+      tags:
+      - geo
+  /geo/by_filters:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Filters
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.GeoDataFilter'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully
+          schema:
+            type: integer
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get by filter
       tags:
       - geo
   /geo/unom:
