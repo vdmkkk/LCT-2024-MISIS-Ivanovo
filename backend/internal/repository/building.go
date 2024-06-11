@@ -24,11 +24,12 @@ func (b buildingRepo) GetByUNOM(ctx context.Context, unom int) (models.Building,
        meter_brand, meter_serial_number, id_uu, full_address, ods_number, ods_address, serial_number, 
        city, administrative_district, municipal_district, locality, street, house_number_type, 
        house_number, building_number, structure_number_type, structure_number, unad, material, 
-       purpose, class, type, sign, global_id, obj_type, address_x, municipal_district_1, 
+       purpose, class, buildings.type, sign, global_id, obj_type, address_x, municipal_district_1, 
        planning_element_name, house_ownership_number_type, intra_city_area, adm_area, district_1, 
        nreg, dreg, n_fias, d_fias, kad_n, kad_zu, kladr, tdoc, ndoc, ddoc, adr_type, vid, 
-       sostad, status, to_json(geo_data),to_json(geo_data_center), id_ods, phone_number
+       sostad, status, to_json(geo_data),to_json(geo_data_center), id_ods, phone_number, to_json(c.center)
 		FROM buildings
+		LEFT JOIN ctps c on buildings.ctp = c.ctp_id
 		WHERE unom = $1;`
 
 	row := b.db.QueryRowContext(ctx, query, unom)
@@ -36,6 +37,7 @@ func (b buildingRepo) GetByUNOM(ctx context.Context, unom int) (models.Building,
 	var building models.Building
 	var geoDataJSON []byte
 	var geoDataCenterJSON []byte
+	var centerJSON []byte
 	err := row.Scan(&building.Unom,
 		&building.Ctp,
 		&building.ExternalSystemAddress,
@@ -111,7 +113,9 @@ func (b buildingRepo) GetByUNOM(ctx context.Context, unom int) (models.Building,
 		&geoDataJSON,
 		&geoDataCenterJSON,
 		&building.IDODS,
-		&building.PhoneNumber)
+		&building.PhoneNumber,
+		&centerJSON,
+	)
 	if err != nil {
 		return models.Building{}, err
 	}
@@ -128,6 +132,11 @@ func (b buildingRepo) GetByUNOM(ctx context.Context, unom int) (models.Building,
 	}
 
 	err = json.Unmarshal(geoDataCenterJSON, &building.GeoDataCenter)
+	if err != nil {
+		return models.Building{}, err
+	}
+
+	err = json.Unmarshal(centerJSON, &building.CtpCenter)
 	if err != nil {
 		return models.Building{}, err
 	}

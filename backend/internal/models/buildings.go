@@ -79,4 +79,5 @@ type Building struct {
 	GeoDataCenter              []float64     `json:"geo_data_center"`               // Geo data center as DOUBLE PRECISION[]. Simplified representation.
 	IDODS                      null.Float    `json:"idods"`                         // ID ODS as FLOAT8.
 	PhoneNumber                null.String   `json:"phone_number"`                  // Phone number as TEXT.
+	CtpCenter                  []float64     `json:"ctp_center"`
 }
