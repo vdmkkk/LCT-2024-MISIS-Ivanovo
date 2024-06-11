@@ -50,3 +50,31 @@ func (b BuildingHandler) GetByUNOM(c *gin.Context) {
 
 	c.JSON(http.StatusOK, building)
 }
+
+// @Summary Get buildings by ctp
+// @Tags building
+// @Accept  json
+// @Produce  json
+// @Param ctp query string true "ctp"
+// @Success 200 {object} int "Successfully"
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /building/by_ctp [get]
+func (b BuildingHandler) GetByCTPID(c *gin.Context) {
+	ctp := c.Query("ctp")
+	if ctp == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no ctp provided"})
+	}
+
+	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(viper.GetInt(config.TimeOut))*time.Millisecond)
+	defer cancel()
+
+	buildings, err := b.buildingServ.GetByCTPID(ctx, ctp)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, buildings)
+}
