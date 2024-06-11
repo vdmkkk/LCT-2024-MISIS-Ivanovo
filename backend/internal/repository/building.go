@@ -128,7 +128,7 @@ func (b buildingRepo) GetByUNOM(ctx context.Context, unom int) (models.Building,
 			return models.Building{}, err
 		}
 
-		building.GeoData = *flatMap(coordinatesFourDims)
+		building.GeoData = *FlatMap(coordinatesFourDims)
 	}
 
 	err = json.Unmarshal(geoDataCenterJSON, &building.GeoDataCenter)
@@ -264,7 +264,7 @@ func (b buildingRepo) GetByCTPID(ctx context.Context, ctpID string) ([]models.Bu
 				return nil, err
 			}
 
-			building.GeoData = *flatMap(coordinatesFourDims)
+			building.GeoData = *FlatMap(coordinatesFourDims)
 		}
 
 		err = json.Unmarshal(geoDataCenterJSON, &building.GeoDataCenter)
