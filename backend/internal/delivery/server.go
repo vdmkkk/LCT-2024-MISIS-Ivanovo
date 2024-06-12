@@ -46,6 +46,14 @@ func Start(db *sqlx.DB, logger *log.Logs) {
 
 	r.GET("/ctp", ctpHandler.GetByCTPID)
 
+	incidentRepo := repository.InitIncidentRepo(db)
+	incidentServ := service.InitIncidentService(incidentRepo, ctpRepo, buildingRepo, logger)
+	incidentHandler := handlers.InitIncidentHandler(incidentServ)
+
+	r.POST("/incident", incidentHandler.Create)
+	r.GET("/incident/all", incidentHandler.GetAll)
+	r.GET("/incident", incidentHandler.GetByID)
+
 	if err := r.Run("0.0.0.0:8080"); err != nil {
 		panic(fmt.Sprintf("error running client: %v", err.Error()))
 	}

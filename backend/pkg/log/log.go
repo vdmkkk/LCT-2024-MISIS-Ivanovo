@@ -1,9 +1,7 @@
 package log
 
 import (
-	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -30,10 +28,6 @@ func UnitFormatter() {
 		return timeFormatted
 	}
 
-	zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
-		path := strings.Split(file, "Backend")
-		return fmt.Sprintf("%routers:%d", fmt.Sprintf("Backend%routers", path[len(path)-1]), line)
-	}
 }
 
 func InitLogger() (*Logs, *os.File, *os.File) {

@@ -10,7 +10,6 @@ type GeoData interface {
 	GetByUNOM(ctx context.Context, unom int) (models.BuildingGeoData, error)
 	GetByCount(ctx context.Context, count int) ([]models.BuildingGeoData, error)
 	GetByFiltersWithBuildings(ctx context.Context, filters models.GeoDataFilter) (map[string]map[string]models.ResultGeoData, error)
-	GetByTwoFilters(ctx context.Context, filters models.GeoDataFilter) (map[string]map[string]models.ResultGeoData, error)
 }
 
 type Building interface {
@@ -20,4 +19,10 @@ type Building interface {
 
 type Ctp interface {
 	GetByCTPID(ctx context.Context, ctpID string) (models.Ctp, error)
+}
+
+type Incident interface {
+	GetAll(ctx context.Context) ([]models.IncidentShowUp, error)
+	GetByID(ctx context.Context, id int) (models.Incident, error)
+	Create(ctx context.Context, processedIncident models.Incident) (int, error)
 }

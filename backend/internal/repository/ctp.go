@@ -32,14 +32,18 @@ func (c ctpRepo) GetByCTPID(ctx context.Context, ctpID string) (models.Ctp, erro
 		return models.Ctp{}, err
 	}
 
-	err = json.Unmarshal(polygonJSON, &ctp.Polygon)
-	if err != nil {
-		return models.Ctp{}, err
+	if polygonJSON != nil {
+		err = json.Unmarshal(polygonJSON, &ctp.Polygon)
+		if err != nil {
+			return models.Ctp{}, err
+		}
 	}
 
-	err = json.Unmarshal(centerJSON, &ctp.Center)
-	if err != nil {
-		return models.Ctp{}, err
+	if centerJSON != nil {
+		err = json.Unmarshal(centerJSON, &ctp.Center)
+		if err != nil {
+			return models.Ctp{}, err
+		}
 	}
 
 	return ctp, nil
