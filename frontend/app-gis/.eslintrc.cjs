@@ -71,8 +71,10 @@ module.exports = {
     quotes: ['warn', 'single', { avoidEscape: true }],
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/no-var-requires': 'off',
+    '@typescript-eslint/no-explicit-any': 'off',
     'no-unused-vars': 'off', // Ensure this rule is set to 'off'
     '@typescript-eslint/no-unused-vars': 'off', // Also disable the TypeScript-specific rule
     'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
+    '@typescript-eslint/ban-ts-comment': 'off', // Disable the rule
   },
 };

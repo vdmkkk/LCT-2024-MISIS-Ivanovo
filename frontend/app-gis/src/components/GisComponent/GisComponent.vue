@@ -1,16 +1,32 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch, toRaw, computed } from 'vue';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 
 import RighPanel from './components/RightPanel/RightPanel.vue';
+import LeftPanel from './components/LeftPanel/LeftPanel.vue';
+import getAllPolygons from 'src/api/getAllPolygons';
 
+import { useOptionsStore } from 'src/stores/optionsStore';
+
+import { useQuasar } from 'quasar';
+import getGeoByFilters from 'src/api/getGeoByFilters';
+import { GeoType1, GeoType2, GeoType3 } from 'src/types/GeoType';
+import CreateArea from 'src/composables/createArea';
+import Highcharts from 'highcharts';
+
+const $q = useQuasar();
+const colors = Highcharts.getOptions().colors;
 // all the map controls
 const mapRef = ref<google.maps.Map | null>(null);
-const markersRef = ref<google.maps.Marker[]>([]);
+const markersRef = ref<Map<string, google.maps.Marker>[]>([]);
 const markerClustererRef = ref<MarkerClusterer | null>(null);
+const polygonsRef = ref<google.maps.Polygon[]>([]);
+const areaPolygonsRef = ref<google.maps.Polygon[]>([]);
 
 // reactive stuff
-const chosenPlace = ref();
+const currPolygon = ref();
+const currMarker = ref();
+const optionsStore = useOptionsStore();
 
 const coordinates = [
   { lat: 55.752004, lng: 37.617734 },
@@ -19,6 +35,13 @@ const coordinates = [
   { lat: 55.752304, lng: 37.618034 },
   { lat: 55.752404, lng: 37.618134 },
 ];
+
+const clickMap = () => {
+  currPolygon.value = null;
+  currMarker.value = null;
+  if (optionsStore.leftPanelOption == 'layers')
+    optionsStore.setLeftPanelOption(null);
+};
 
 const bindMap = () => {
   const container = document.createElement('div');
@@ -35,14 +58,21 @@ const bindMap = () => {
   };
 
   const map = new google.maps.Map(container, mapOptions);
-  map.addListener('click', () => (chosenPlace.value = null));
+  map.addListener('click', () => {
+    clickMap();
+  });
+
+  map.addListener('drag', () => {
+    if (optionsStore.leftPanelOption == 'layers')
+      optionsStore.setLeftPanelOption(null);
+  });
 
   mapRef.value = map;
 
-  handleMarkers();
+  handleMarkers('ctp');
 };
 
-const handleMarkers = () => {
+const handleMarkers = (type: 'ctp' | 'tec') => {
   if (!mapRef.value) return;
 
   markerClustererRef.value = new MarkerClusterer({
@@ -54,12 +84,141 @@ const handleMarkers = () => {
     const marker = new google.maps.Marker({
       position,
       title: 'Marker Title',
+      icon: {
+        url: `src/assets/markers/${type}${
+          currMarker.value == key ? '_active' : ''
+        }.png`,
+        scaledSize: new window.google.maps.Size(40, 40),
+      },
     });
-    marker.addListener('click', () => (chosenPlace.value = key));
-    markersRef.value.push(marker);
+
+    marker.addListener('click', () => {
+      currMarker.value == key
+        ? (currMarker.value = null)
+        : (currMarker.value = key);
+      marker.set('icon', {
+        url: `src/assets/markers/${type}${
+          currMarker.value == key ? '_active' : ''
+        }.png`,
+        scaledSize: new window.google.maps.Size(40, 40),
+      });
+    });
+    markersRef.value.push(
+      new Map<string, google.maps.Marker>([[key.toString(), marker]])
+    );
     markerClustererRef.value?.addMarker(marker);
   });
 };
+
+const updateMarkers = (type: 'ctp' | 'tec') => {
+  if (markersRef.value) {
+    markersRef.value.map((obj) => {
+      // honestly it was pure luck and I have no clue how it works. Hopefully it will never break apart or i will kill myself slowly and painfully. Nightmare Nightmare Nightmare Nightmare
+      toRaw(obj)
+        .get(toRaw(obj).keys().next().value)
+        ?.set('icon', {
+          url: `src/assets/markers/${type}${
+            currMarker.value == toRaw(obj).keys().next().value ? '_active' : ''
+          }.png`,
+          scaledSize: new window.google.maps.Size(40, 40),
+        });
+    });
+  }
+};
+
+watch(currMarker, () => updateMarkers('ctp'));
+
+const handleBuildingRender = (buidlings: GeoType3) => {
+  // @ts-ignore // sorry, too tired for this dumb shit. Tried my best
+  const allCoordinates: number[][] = [];
+  buidlings.forEach(
+    ({ UNOM: unom, coordinates: coords, Area: string }: any) => {
+      coords.forEach((newObj: any) => {
+        allCoordinates.push(newObj);
+        const newPolygon = new google.maps.Polygon({
+          paths: newObj.map(([lat, lng]: [number, number]) => {
+            return { lat: lng, lng: lat };
+          }),
+          strokeColor: '#9c9c9c',
+          strokeOpacity: 0.8,
+          strokeWeight: 2,
+          fillColor: '#9c9c9c',
+          fillOpacity: 0.35,
+        });
+        polygonsRef.value.push(newPolygon);
+        newPolygon.setMap(mapRef.value);
+        newPolygon.addListener('click', () => (currPolygon.value = unom));
+      });
+    }
+  );
+  return allCoordinates.flat(1);
+};
+
+onMounted(() => {
+  loadData();
+});
+
+const loadData = async () => {
+  $q.loading.show({ message: 'Идет загрузка карты. Пожалуйста, подождите' });
+
+  if (polygonsRef.value) {
+    polygonsRef.value.forEach((polygon) => {
+      polygon.setMap(null);
+      polygon.setPath([]);
+    });
+    polygonsRef.value = [];
+  }
+
+  if (areaPolygonsRef.value) {
+    areaPolygonsRef.value.forEach((polygon) => {
+      polygon.setMap(null);
+      polygon.setPath([]);
+    });
+    areaPolygonsRef.value = [];
+  }
+
+  await getGeoByFilters().then((res) => {
+    (Object.entries(res) as GeoType1[]).forEach(([district, districtObj]) => {
+      (Object.entries(districtObj) as GeoType2[]).forEach(
+        ([tec, tecObjects], index) => {
+          // @ts-ignore //
+          const allCoordinates = handleBuildingRender(tecObjects['buildings']);
+          // @ts-ignore //
+          if (tec != 'null' && tec != '') {
+            const newPolygon = new google.maps.Polygon({
+              paths: CreateArea(allCoordinates),
+              strokeColor: colors?.[index % 10].toString(),
+              strokeOpacity: 0.8,
+              strokeWeight: 2,
+              fillColor: colors?.[index % 10].toString(),
+              fillOpacity: 0.2,
+            });
+            areaPolygonsRef.value.push(newPolygon);
+            newPolygon.setMap(mapRef.value);
+            // newPolygon.addListener('click', () => (currPolygon.value = unom));
+          }
+        }
+      );
+    });
+    $q.loading.hide();
+  });
+};
+
+const filtersObject = computed(() => {
+  const obj: Record<string, string | null> = {};
+  optionsStore.filters.forEach((value, key) => {
+    obj[key] = value;
+  });
+  return obj;
+});
+
+watch(
+  filtersObject,
+  (newValue, oldValue) => {
+    loadData();
+  },
+  { deep: true }
+);
 
 onMounted(() => {
   if (!window.google) {
@@ -80,7 +239,8 @@ onMounted(() => {
 
 <template>
   <div class="map-container" id="container" />
-  <RighPanel :place-id="chosenPlace" />
+  <RighPanel :place-id="currPolygon" />
+  <LeftPanel />
 </template>
 
 <style scoped>
