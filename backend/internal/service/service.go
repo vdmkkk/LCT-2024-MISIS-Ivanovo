@@ -20,3 +20,9 @@ type Building interface {
 type Ctp interface {
 	GetByCTPID(ctx context.Context, ctpID string) (models.Ctp, error)
 }
+
+type Incident interface {
+	Create(ctx context.Context, createIncident models.IncidentCreate) (int, error)
+	GetAll(ctx context.Context) ([]models.IncidentShowUp, error)
+	GetByID(ctx context.Context, id int) (models.Incident, error)
+}

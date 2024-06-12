@@ -155,7 +155,7 @@ func (b buildingRepo) GetByCTPID(ctx context.Context, ctpID string) ([]models.Bu
        meter_brand, meter_serial_number, id_uu, full_address, ods_number, ods_address, serial_number, 
        city, administrative_district, municipal_district, locality, street, house_number_type, 
        house_number, building_number, structure_number_type, structure_number, unad, material, 
-       purpose, class, buildings.type, sign, global_id, obj_type, address_x, municipal_district_1, 
+       purpose, class, buildings.type, sign, global_id, obj_type, address_x, 
        planning_element_name, house_ownership_number_type, intra_city_area, adm_area, district_1, 
        nreg, dreg, n_fias, d_fias, kad_n, kad_zu, kladr, tdoc, ndoc, ddoc, adr_type, vid, 
        sostad, status, to_json(geo_data),to_json(geo_data_center), id_ods, phone_number
@@ -226,7 +226,6 @@ func (b buildingRepo) GetByCTPID(ctx context.Context, ctpID string) ([]models.Bu
 			&building.GlobalID,
 			&building.ObjectType,
 			&building.AddressX,
-			&building.MunicipalDistrict1,
 			&building.PlanningElementName,
 			&building.HouseOwnershipNumberType,
 			&building.IntraCityArea,

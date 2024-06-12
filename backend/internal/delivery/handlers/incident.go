@@ -1,0 +1,105 @@
+package handlers
+
+import (
+	"context"
+	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
+	"lct/internal/models"
+	"lct/internal/service"
+	"lct/pkg/config"
+	"net/http"
+	"strconv"
+	"time"
+)
+
+type IncidentHandler struct {
+	incidentServ service.Incident
+}
+
+func InitIncidentHandler(incidentServ service.Incident) IncidentHandler {
+	return IncidentHandler{
+		incidentServ: incidentServ,
+	}
+}
+
+// @Summary Create incident
+// @Tags incident
+// @Accept  json
+// @Produce  json
+// @Param data body models.IncidentCreate true "Incident create"
+// @Success 200 {object} int "Successfully"
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /incident [post]
+func (i IncidentHandler) Create(c *gin.Context) {
+	var incidentCreate models.IncidentCreate
+
+	if err := c.ShouldBindJSON(&incidentCreate); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(viper.GetInt(config.TimeOut))*time.Millisecond)
+	defer cancel()
+
+	incidentID, err := i.incidentServ.Create(ctx, incidentCreate)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, incidentID)
+}
+
+// @Summary Get all incidents
+// @Tags incident
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} []models.IncidentShowUp "Successfully"
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /incident/all [get]
+func (i IncidentHandler) GetAll(c *gin.Context) {
+	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(viper.GetInt(config.TimeOut))*time.Millisecond)
+	defer cancel()
+
+	incidents, err := i.incidentServ.GetAll(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, incidents)
+}
+
+// @Summary Get incident by ID
+// @Tags incident
+// @Accept  json
+// @Produce  json
+// @Param id query int true "Incident create"
+// @Success 200 {object} models.Incident "Successfully"
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /incident [get]
+func (i IncidentHandler) GetByID(c *gin.Context) {
+	idRaw := c.Query("id")
+	id, err := strconv.Atoi(idRaw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no valid id provided"})
+		return
+	}
+
+	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(viper.GetInt(config.TimeOut))*time.Millisecond)
+	defer cancel()
+
+	incident, err := i.incidentServ.GetByID(ctx, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, incident)
+}

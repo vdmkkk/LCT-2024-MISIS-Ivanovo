@@ -1,7 +1,7 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE heating_data (
-                              unom INTEGER PRIMARY KEY, -- UNOM
+                              unom INTEGER, -- UNOM
                               id_uu INTEGER, -- ID УУ
                               id_tu INTEGER, -- ID ТУ
                               district TEXT, -- Округ

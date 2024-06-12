@@ -276,11 +276,6 @@ func (g geoDataRepo) GetByFiltersWithBuildings(ctx context.Context, filters mode
 	return res, nil
 }
 
-func (g geoDataRepo) GetByTwoFilters(ctx context.Context, filters models.GeoDataFilter) (map[string]map[string]models.ResultGeoData, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func InitGeoDataRepo(db *sqlx.DB) GeoData {
 	return geoDataRepo{db: db}
 }

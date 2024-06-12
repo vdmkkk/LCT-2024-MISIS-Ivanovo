@@ -310,6 +310,147 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/incident": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "incident"
+                ],
+                "summary": "Get incident by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Incident create",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully",
+                        "schema": {
+                            "$ref": "#/definitions/models.Incident"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "incident"
+                ],
+                "summary": "Create incident",
+                "parameters": [
+                    {
+                        "description": "Incident create",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.IncidentCreate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/incident/all": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "incident"
+                ],
+                "summary": "Get all incidents",
+                "responses": {
+                    "200": {
+                        "description": "Successfully",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.IncidentShowUp"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -327,6 +468,70 @@ const docTemplate = `{
                 },
                 "tec": {
                     "type": "boolean"
+                }
+            }
+        },
+        "models.HandledUnom": {
+            "type": "object",
+            "properties": {
+                "hours_to_cool": {
+                    "type": "integer"
+                },
+                "priority_group": {
+                    "type": "integer"
+                },
+                "unom": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.Incident": {
+            "type": "object",
+            "properties": {
+                "coordinates": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "ctp_id": {
+                    "type": "string"
+                },
+                "handled_unoms": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.HandledUnom"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "payload": {}
+            }
+        },
+        "models.IncidentCreate": {
+            "type": "object",
+            "properties": {
+                "ctp_id": {
+                    "type": "string"
+                },
+                "payload": {},
+                "unom": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.IncidentShowUp": {
+            "type": "object",
+            "properties": {
+                "coordinates": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "id": {
+                    "type": "integer"
                 }
             }
         }
