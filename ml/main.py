@@ -10,11 +10,19 @@ from fastapi import FastAPI, HTTPException
 import uvicorn
 import warnings
 
+import os
+
+DB_NAME = os.getenv('DB_NAME')
+DB_USER = os.getenv('DB_USER')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
+DB_PORT = os.getenv('DB_PORT')
+DB_HOST = os.getenv('DB_HOST')
+
+TIME_OUT = 20000000000  # milliseconds
+
 warnings.filterwarnings("ignore")
 
-
 app = FastAPI()
-
 
 model = CatBoostClassifier()
 model.load_model('model_task1')
@@ -24,191 +32,190 @@ model.load_model('model_task1')
 async def predict_all(date: datetime.datetime):
     try:
         conn = psycopg2.connect(
-            user="ivanovo",
-            password="ivanovo",
-            host="92.51.39.188",  # локальный хост
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,  # локальный хост
             port="5432",  # стандартный порт PostgreSQL
-            database="ivanovo"
+            database=DB_NAME
         )
 
         # Получаем предсказания
         preds = get_predict_for_all(model, date, conn)
 
         return preds
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
     finally:
         conn.close()
 
 
 @app.post("/predict_one/")
-async def predict_one(unom:int, date: datetime.datetime, n:int):
+async def predict_one(unom: int, date: datetime.datetime, n: int):
     try:
         conn = psycopg2.connect(
-            user="ivanovo",
-            password="ivanovo",
-            host="92.51.39.188",  # локальный хост
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,  # локальный хост
             port="5432",  # стандартный порт PostgreSQL
-            database="ivanovo"
+            database=DB_NAME
         )
 
         # Получаем предсказания
         preds = get_predict_for_one(model, unom, date, n, conn)
 
         return preds
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
     finally:
         conn.close()
 
-features = [
- 'УНОМ',
- 'month',
- 'mean_volume1forhour',
- 'std_volume1forhour',
- 'mean_volume2forhour',
- 'std_volume2forhour',
- 'mean_q2forhour',
- 'std_q2forhour',
- 'min_volume1forhour',
- 'max_volume1forhour',
- 'median_volume1forhour',
- 'min_volume2forhour',
- 'max_volume2forhour',
- 'median_volume2forhour',
- 'min_q2forhour',
- 'max_q2forhour',
- 'median_q2forhour',
- 'Потребители',
- 'Группа',
- 'Центральное отопление(контур)',
- 'Ошибки',
- 'weather1',
- 'weather2',
- 'Округ',
- 'Район',
- 'Серии проектов',
- 'Количество этажей',
- 'Количество подъездов',
- 'Количество квартир',
- 'Общая площадь',
- 'Общая площадь жилых помещений',
- 'Износ объекта (по БТИ)',
- 'Материалы стен',
- 'Признак аварийности здания',
- 'Количество пассажирских лифтов',
- 'Количество грузопассажирских лифтов',
- 'Материалы кровли по БТИ',
- 'Типы жилищного фонда',
- 'Статусы МКД',
- 'Марка счетчика ',
- 'ЦТП',
- 'Муниципальный округ',
- 'Материал',
- 'Назначение',
- 'Класс',
- 'Тип',
- 'OBJ_TYPE',
- 'Внутригородская территория',
- 'Давление не в норме_count',
- 'T < min_count',
- 'T > max_count',
- 'Утечка_count',
- 'month1_count',
- 'month2_count',
- 'month3_count',
- 'month4_count',
- 'month10_count',
- 'month11_count',
- 'month12_count',
- 'year',
- 'day',
- 'hour',
- 'dayofweek',
- 'weekofyear',
- 'quarter',
- 'is_month_start',
- 'is_month_end',
- 'month_sin',
- 'month_cos',
- 'hour_sin',
- 'hour_cos',
- 'quarter_sin',
- 'quarter_cos',
- 'day_sin',
- 'day_cos',
- 'dayofweek_sin',
- 'dayofweek_cos',
- 'weekofyear_sin',
- 'weekofyear_cos'
-]
 
+features = [
+    'УНОМ',
+    'month',
+    'mean_volume1forhour',
+    'std_volume1forhour',
+    'mean_volume2forhour',
+    'std_volume2forhour',
+    'mean_q2forhour',
+    'std_q2forhour',
+    'min_volume1forhour',
+    'max_volume1forhour',
+    'median_volume1forhour',
+    'min_volume2forhour',
+    'max_volume2forhour',
+    'median_volume2forhour',
+    'min_q2forhour',
+    'max_q2forhour',
+    'median_q2forhour',
+    'Потребители',
+    'Группа',
+    'Центральное отопление(контур)',
+    'Ошибки',
+    'weather1',
+    'weather2',
+    'Округ',
+    'Район',
+    'Серии проектов',
+    'Количество этажей',
+    'Количество подъездов',
+    'Количество квартир',
+    'Общая площадь',
+    'Общая площадь жилых помещений',
+    'Износ объекта (по БТИ)',
+    'Материалы стен',
+    'Признак аварийности здания',
+    'Количество пассажирских лифтов',
+    'Количество грузопассажирских лифтов',
+    'Материалы кровли по БТИ',
+    'Типы жилищного фонда',
+    'Статусы МКД',
+    'Марка счетчика ',
+    'ЦТП',
+    'Муниципальный округ',
+    'Материал',
+    'Назначение',
+    'Класс',
+    'Тип',
+    'OBJ_TYPE',
+    'Внутригородская территория',
+    'Давление не в норме_count',
+    'T < min_count',
+    'T > max_count',
+    'Утечка_count',
+    'month1_count',
+    'month2_count',
+    'month3_count',
+    'month4_count',
+    'month10_count',
+    'month11_count',
+    'month12_count',
+    'year',
+    'day',
+    'hour',
+    'dayofweek',
+    'weekofyear',
+    'quarter',
+    'is_month_start',
+    'is_month_end',
+    'month_sin',
+    'month_cos',
+    'hour_sin',
+    'hour_cos',
+    'quarter_sin',
+    'quarter_cos',
+    'day_sin',
+    'day_cos',
+    'dayofweek_sin',
+    'dayofweek_cos',
+    'weekofyear_sin',
+    'weekofyear_cos'
+]
 
 features2aggdata = [
     "УНОМ",
     'Округ',
- 'Район',
- 'Серии проектов',
- 'Количество этажей',
- 'Количество подъездов',
- 'Количество квартир',
- 'Общая площадь',
- 'Общая площадь жилых помещений',
- 'Износ объекта (по БТИ)',
- 'Материалы стен',
- 'Признак аварийности здания',
- 'Количество пассажирских лифтов',
- 'Количество грузопассажирских лифтов',
- 'Материалы кровли по БТИ',
- 'Типы жилищного фонда',
- 'Статусы МКД',
- 'Марка счетчика ',
- 'ЦТП',
- 'Муниципальный округ',
- 'Материал',
- 'Назначение',
- 'Класс',
- 'Тип',
- 'OBJ_TYPE',
- 'Внутригородская территория',
+    'Район',
+    'Серии проектов',
+    'Количество этажей',
+    'Количество подъездов',
+    'Количество квартир',
+    'Общая площадь',
+    'Общая площадь жилых помещений',
+    'Износ объекта (по БТИ)',
+    'Материалы стен',
+    'Признак аварийности здания',
+    'Количество пассажирских лифтов',
+    'Количество грузопассажирских лифтов',
+    'Материалы кровли по БТИ',
+    'Типы жилищного фонда',
+    'Статусы МКД',
+    'Марка счетчика ',
+    'ЦТП',
+    'Муниципальный округ',
+    'Материал',
+    'Назначение',
+    'Класс',
+    'Тип',
+    'OBJ_TYPE',
+    'Внутригородская территория',
 
 ]
 
-
 categorical_features = [
- 'УНОМ',
- 'month',
- 'Потребители',
- 'Группа',
- 'Центральное отопление(контур)',
- 'Ошибки',
- 'Округ',
- 'Район',
- 'Серии проектов',
- 'Материалы стен',
- 'Признак аварийности здания',
- 'Материалы кровли по БТИ',
- 'Типы жилищного фонда',
- 'Статусы МКД',
- 'Марка счетчика ',
- 'ЦТП',
- 'Муниципальный округ',
- 'Материал',
- 'Назначение',
- 'Класс',
- 'Тип',
- 'OBJ_TYPE',
- 'Внутригородская территория',
- 'is_month_start',
-'is_month_end'
-           ]
+    'УНОМ',
+    'month',
+    'Потребители',
+    'Группа',
+    'Центральное отопление(контур)',
+    'Ошибки',
+    'Округ',
+    'Район',
+    'Серии проектов',
+    'Материалы стен',
+    'Признак аварийности здания',
+    'Материалы кровли по БТИ',
+    'Типы жилищного фонда',
+    'Статусы МКД',
+    'Марка счетчика ',
+    'ЦТП',
+    'Муниципальный округ',
+    'Материал',
+    'Назначение',
+    'Класс',
+    'Тип',
+    'OBJ_TYPE',
+    'Внутригородская территория',
+    'is_month_start',
+    'is_month_end'
+]
 
 
-def get_predict_for_all(model: CatBoostClassifier, date: datetime.datetime, conn) -> dict:   
+def get_predict_for_all(model: CatBoostClassifier, date: datetime.datetime, conn) -> dict:
     agg_data = get_agg_data(conn)
     agg_data = agg_data.dropna(subset='unom')
     unomlst = agg_data['unom'].unique().tolist()
@@ -219,7 +226,7 @@ def get_predict_for_all(model: CatBoostClassifier, date: datetime.datetime, conn
         "month": [date.month] * n_preds,
         "day": [date.day] * n_preds
     })
-    
+
     odpu = get_odpu(date, conn)
     events2preds[ftrs2odpu] = events2preds.apply(lambda x: add_opdu_features(odpu, x), axis=1)
 
@@ -233,7 +240,6 @@ def get_predict_for_all(model: CatBoostClassifier, date: datetime.datetime, conn
     agg_data['УНОМ'] = agg_data['unom']
     events2preds = events2preds.merge(agg_data[features2aggdata], how='left', on='УНОМ')
 
-    
     events2preds = extract_datetime_features(events2preds, "Дата создания во внешней системе")
     events2preds = add_cyclic_features(events2preds, 'month', 12)
     events2preds = add_cyclic_features(events2preds, 'hour', 24)
@@ -242,26 +248,23 @@ def get_predict_for_all(model: CatBoostClassifier, date: datetime.datetime, conn
     events2preds = add_cyclic_features(events2preds, 'dayofweek', 31)
     events2preds = add_cyclic_features(events2preds, 'weekofyear', 31)
     events2preds.drop("Дата создания во внешней системе", axis=1, inplace=True)
-    
 
     numerical_features = [col for col in events2preds.columns if col not in categorical_features]
-    
+
     # Удаление строк с NaN в числовых признаках
     events2preds[numerical_features] = events2preds[numerical_features].fillna(events2preds[numerical_features].mean())
-    
-    
-    
+
     for col in categorical_features:
         events2preds[col] = events2preds[col].astype(str)
-        
+
     preds = model.predict_proba(events2preds[features])
     events2preds['УНОМ'] = events2preds['УНОМ'].astype(float).astype(int)
     events2preds['preds'] = preds.tolist()
-    
+
     return events2preds[['УНОМ', 'preds']].set_index('УНОМ')['preds'].to_dict()
 
 
-def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.datetime, n:int, conn) -> dict:
+def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.datetime, n: int, conn) -> dict:
     agg_data = get_agg_data_one(unom, conn)
     events2preds = pd.DataFrame({
         "УНОМ": [unom] * n,
@@ -282,7 +285,6 @@ def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.dat
     agg_data['УНОМ'] = agg_data['unom']
     events2preds = events2preds.merge(agg_data[features2aggdata], how='left', on='УНОМ')
 
-    
     events2preds = extract_datetime_features(events2preds, "Дата создания во внешней системе")
     events2preds = add_cyclic_features(events2preds, 'month', 12)
     events2preds = add_cyclic_features(events2preds, 'hour', 24)
@@ -291,20 +293,17 @@ def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.dat
     events2preds = add_cyclic_features(events2preds, 'dayofweek', 31)
     events2preds = add_cyclic_features(events2preds, 'weekofyear', 31)
     events2preds.drop("Дата создания во внешней системе", axis=1, inplace=True)
-    
 
     numerical_features = [col for col in events2preds.columns if col not in categorical_features]
-    
+
     # Удаление строк с NaN в числовых признаках
     events2preds[numerical_features] = events2preds[numerical_features].fillna(events2preds[numerical_features].mean())
-    
-    
-    
+
     for col in categorical_features:
         events2preds[col] = events2preds[col].astype(str)
-        
+
     preds = model.predict_proba(events2preds[features])
-    
+
     return preds.tolist()
 
 
@@ -356,10 +355,10 @@ def add_opdu_features(odpu, row):
         row['Ошибки'] = None
     return row[ftrs2odpu]
 
-    
-def get_odpu(date:datetime.datetime, conn) -> pd.DataFrame: # возвращает таблицу odpu, ОБРЕЗАННУЮ ПО ДАТЕ 
+
+def get_odpu(date: datetime.datetime, conn) -> pd.DataFrame:  # возвращает таблицу odpu, ОБРЕЗАННУЮ ПО ДАТЕ
     odpu = pd.read_sql(
-       f"""
+        f"""
         SELECT
             *
         FROM 
@@ -397,22 +396,20 @@ def get_odpu(date:datetime.datetime, conn) -> pd.DataFrame: # возвращае
     }, inplace=True)
     odpu['Месяц/Год'] = pd.to_datetime(odpu['Месяц/Год'], format='%d-%m-%Y')
     opdu = odpu[(odpu['Месяц/Год'] <= date) &
-                (odpu['Месяц/Год'] >= date - pd.Timedelta(days=14))] 
-    
+                (odpu['Месяц/Год'] >= date - pd.Timedelta(days=14))]
+
     odpu.sort_values(by='Месяц/Год', inplace=True, ignore_index=True)
     odpu['Объём поданого теплоносителя в систему ЦО'] = odpu['Объём поданого теплоносителя в систему ЦО'].astype(float)
     odpu['volume1forhour'] = odpu['Объём поданого теплоносителя в систему ЦО'] / (odpu['Наработка часов счётчика'])
     odpu['volume2forhour'] = odpu['Объём обратного теплоносителя из системы ЦО'] / (odpu['Наработка часов счётчика'])
     odpu['q2forhour'] = odpu['Расход тепловой энергии'].astype(float) / (odpu['Наработка часов счётчика'])
-    
 
-    
     return odpu
 
 
 def get_odpu_one(unom: int, date: datetime.datetime, conn):
     odpu = pd.read_sql(
-       f"""
+        f"""
         SELECT
             *
         FROM 
@@ -451,8 +448,8 @@ def get_odpu_one(unom: int, date: datetime.datetime, conn):
     }, inplace=True)
     odpu['Месяц/Год'] = pd.to_datetime(odpu['Месяц/Год'], format='%d-%m-%Y')
     opdu = odpu[(odpu['Месяц/Год'] <= date) &
-                (odpu['Месяц/Год'] >= date - pd.Timedelta(days=14))] 
-    
+                (odpu['Месяц/Год'] >= date - pd.Timedelta(days=14))]
+
     odpu.sort_values(by='Месяц/Год', inplace=True, ignore_index=True)
     odpu['Объём поданого теплоносителя в систему ЦО'] = odpu['Объём поданого теплоносителя в систему ЦО'].astype(float)
     odpu['volume1forhour'] = odpu['Объём поданого теплоносителя в систему ЦО'] / (odpu['Наработка часов счётчика'])
@@ -547,11 +544,10 @@ def get_agg_data(conn) -> pd.DataFrame:
         'id_ods': 'ID ODS',
         'phone_number': 'PHONE_NUMBER'
     }
-    
+
     # Переименование столбцов
     df.rename(columns=new_column_names, inplace=True)
     return df
-
 
 
 def get_agg_data_one(unom: int, conn) -> pd.DataFrame:
@@ -640,23 +636,23 @@ def get_agg_data_one(unom: int, conn) -> pd.DataFrame:
         'id_ods': 'ID ODS',
         'phone_number': 'PHONE_NUMBER'
     }
-    
+
     # Переименование столбцов
     df.rename(columns=new_column_names, inplace=True)
     return df
 
 
 feature2events = [
-    'Давление не в норме_count', 
-    'T < min_count', 
-    'T > max_count', 
-    'Утечка_count', 
-    'month1_count', 
-    'month2_count', 
-    'month3_count', 
-    'month4_count', 
-    'month10_count', 
-    'month11_count', 
+    'Давление не в норме_count',
+    'T < min_count',
+    'T > max_count',
+    'Утечка_count',
+    'month1_count',
+    'month2_count',
+    'month3_count',
+    'month4_count',
+    'month10_count',
+    'month11_count',
     'month12_count'
 ]
 
@@ -666,6 +662,7 @@ new_event_names = [
     'T > max',
     'Утечка'
 ]
+
 
 def collect_events(row, events):
     local_events = events[events['УНОМ'] == row['УНОМ']]
@@ -679,12 +676,12 @@ def collect_events(row, events):
             row[f'{event_type}_count'] = 0
 
     grpb = local_events.groupby('month').count()['Наименование']
-    for month_num in [1,2,3,4,10,11,12]:
+    for month_num in [1, 2, 3, 4, 10, 11, 12]:
         if month_num in grpb:
             row[f"month{month_num}_count"] = grpb[month_num]
         else:
             row[f"month{month_num}_count"] = 0
-    
+
     return row[feature2events]
 
 
@@ -702,6 +699,7 @@ num2month = {
     8: "august",
     9: "september"
 }
+
 
 def collect_weather(row, weather):
     mon = num2month[row.month]
@@ -721,16 +719,16 @@ def get_events(date, conn) -> pd.DataFrame:
         """, conn
     )
     events.rename(columns={
-        'name': 'Наименование', 
-        'source': 'Источник', 
-        'creation_date': 'Дата создания во внешней системе', 
-        'closure_date': 'Дата закрытия', 
+        'name': 'Наименование',
+        'source': 'Источник',
+        'creation_date': 'Дата создания во внешней системе',
+        'closure_date': 'Дата закрытия',
         'district': 'Округ',
         'unom': 'УНОМ',
-       'address': 'Адрес', 
+        'address': 'Адрес',
         'event_completion_date': 'Дата и время завершения события'
     }, inplace=True)
-    
+
     eventNames2labels = {
         "P1 <= 0": "Давление не в норме",
         "P2 <= 0": "Давление не в норме",
@@ -751,9 +749,9 @@ def get_events(date, conn) -> pd.DataFrame:
         "Температура в квартире ниже нормативной": "T < min",
         "Течь в системе отопления": "Утечка",
         "Сильная течь в системе отопления": "Утечка",
-    
+
     }
-    
+
     event_names = list(eventNames2labels.keys())
     events = events[events['Наименование'].isin(event_names)]
     events['Наименование'] = events['Наименование'].apply(lambda x: eventNames2labels[x])
@@ -778,16 +776,16 @@ def get_events_one(unom: int, date: datetime.datetime, conn) -> pd.DataFrame:
         """, conn
     )
     events.rename(columns={
-        'name': 'Наименование', 
-        'source': 'Источник', 
-        'creation_date': 'Дата создания во внешней системе', 
-        'closure_date': 'Дата закрытия', 
+        'name': 'Наименование',
+        'source': 'Источник',
+        'creation_date': 'Дата создания во внешней системе',
+        'closure_date': 'Дата закрытия',
         'district': 'Округ',
         'unom': 'УНОМ',
-       'address': 'Адрес', 
+        'address': 'Адрес',
         'event_completion_date': 'Дата и время завершения события'
     }, inplace=True)
-    
+
     eventNames2labels = {
         "P1 <= 0": "Давление не в норме",
         "P2 <= 0": "Давление не в норме",
@@ -808,9 +806,9 @@ def get_events_one(unom: int, date: datetime.datetime, conn) -> pd.DataFrame:
         "Температура в квартире ниже нормативной": "T < min",
         "Течь в системе отопления": "Утечка",
         "Сильная течь в системе отопления": "Утечка",
-    
+
     }
-    
+
     event_names = list(eventNames2labels.keys())
     events = events[events['Наименование'].isin(event_names)]
     events['Наименование'] = events['Наименование'].apply(lambda x: eventNames2labels[x])
@@ -821,6 +819,7 @@ def get_events_one(unom: int, date: datetime.datetime, conn) -> pd.DataFrame:
     events = events[['Наименование', 'Источник', 'Дата создания во внешней системе', 'УНОМ', 'month', 'day']]
 
     return events
+
 
 def extract_datetime_features(df, date_col):
     df['year'] = df[date_col].dt.year
@@ -833,12 +832,13 @@ def extract_datetime_features(df, date_col):
     df['is_month_start'] = df[date_col].dt.is_month_start
     df['is_month_end'] = df[date_col].dt.is_month_end
     return df
-    
-    
+
+
 def add_cyclic_features(df, col, max_val):
     df[col + '_sin'] = np.sin(2 * np.pi * df[col] / max_val)
     df[col + '_cos'] = np.cos(2 * np.pi * df[col] / max_val)
     return df
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
