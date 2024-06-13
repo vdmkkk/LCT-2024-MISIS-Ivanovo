@@ -16,12 +16,14 @@ soft-restart:
 hard-restart: update
 	$(DC) down
 	$(DOC) rmi deploy-app
+	$(DOC) rmi deploy-ml-app
 	$(DC) --env-file .env up --build
 
 # Target to perform a hard restart (with removal of source images, but without git pull)
 restart:
 	$(DC) down
 	$(DOC) rmi deploy-app
+	$(DOC) rmi deploy-ml-app
 	$(DC) --env-file .env up --build
 
 stop:
