@@ -28,7 +28,8 @@ func (b buildingRepo) GetByUNOM(ctx context.Context, unom int) (models.Building,
        purpose, class, buildings.type, sign, global_id, obj_type, address_x, 
        planning_element_name, house_ownership_number_type, intra_city_area, adm_area, district_1, 
        nreg, dreg, n_fias, d_fias, kad_n, kad_zu, kladr, tdoc, ndoc, ddoc, adr_type, vid, 
-       sostad, status, to_json(geo_data),to_json(geo_data_center), id_ods, phone_number, to_json(c.center)
+       sostad, status, to_json(geo_data),to_json(geo_data_center), id_ods, phone_number, to_json(c.center), energy_efficiency_class,
+       phone_number_new, work_hours
 		FROM buildings
 		LEFT JOIN ctps c on buildings.ctp = c.ctp_id
 		WHERE unom = $1;`
@@ -114,6 +115,9 @@ func (b buildingRepo) GetByUNOM(ctx context.Context, unom int) (models.Building,
 		&building.IDODS,
 		&building.PhoneNumber,
 		&centerJSON,
+		&building.EnergyEfficiencyClass,
+		&building.PhoneNumberNew,
+		&building.WorkHours,
 	)
 	if err != nil {
 		return models.Building{}, err
@@ -158,7 +162,8 @@ func (b buildingRepo) GetByCTPID(ctx context.Context, ctpID string) ([]models.Bu
        purpose, class, buildings.type, sign, global_id, obj_type, address_x, 
        planning_element_name, house_ownership_number_type, intra_city_area, adm_area, district_1, 
        nreg, dreg, n_fias, d_fias, kad_n, kad_zu, kladr, tdoc, ndoc, ddoc, adr_type, vid, 
-       sostad, status, to_json(geo_data),to_json(geo_data_center), id_ods, phone_number
+       sostad, status, to_json(geo_data),to_json(geo_data_center), id_ods, phone_number, energy_efficiency_class,
+       phone_number_new, work_hours
 		FROM buildings
 		WHERE ctp = $1;`
 
@@ -249,6 +254,9 @@ func (b buildingRepo) GetByCTPID(ctx context.Context, ctpID string) ([]models.Bu
 			&geoDataCenterJSON,
 			&building.IDODS,
 			&building.PhoneNumber,
+			&building.EnergyEfficiencyClass,
+			&building.PhoneNumberNew,
+			&building.WorkHours,
 		)
 		if err != nil {
 			return nil, err

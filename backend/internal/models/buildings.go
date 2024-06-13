@@ -80,4 +80,7 @@ type Building struct {
 	IDODS                      null.Float    `json:"idods"`                         // ID ODS as FLOAT8.
 	PhoneNumber                null.String   `json:"phone_number"`                  // Phone number as TEXT.
 	CtpCenter                  []float64     `json:"ctp_center"`
+	EnergyEfficiencyClass      null.String   `json:"energy_efficiency_class"`
+	PhoneNumberNew             null.String   `json:"phone_number_new"`
+	WorkHours                  null.String   `json:"work_hours"`
 }
