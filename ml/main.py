@@ -44,7 +44,7 @@ async def predict_all(date: datetime.datetime):
 
 
 @app.post("/predict_one/")
-async def predict_one(unom:int, date: datetime.datetime):
+async def predict_one(unom:int, date: datetime.datetime, n:int):
     try:
         conn = psycopg2.connect(
             user="ivanovo",
@@ -55,7 +55,7 @@ async def predict_one(unom:int, date: datetime.datetime):
         )
 
         # Получаем предсказания
-        preds = get_predict_for_one(model, unom, date, conn)
+        preds = get_predict_for_one(model, unom, date, n, conn)
 
         return preds
     
@@ -261,15 +261,14 @@ def get_predict_for_all(model: CatBoostClassifier, date: datetime.datetime, conn
     return events2preds[['УНОМ', 'preds']].set_index('УНОМ')['preds'].to_dict()
 
 
-def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.datetime, conn) -> dict:
+def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.datetime, n:int, conn) -> dict:
     agg_data = get_agg_data_one(unom, conn)
     events2preds = pd.DataFrame({
-        "УНОМ": [unom],
-        "Дата создания во внешней системе": [date],
-        "month": [date.month],
-        "day": [date.day]
+        "УНОМ": [unom] * n,
+        "Дата создания во внешней системе": [(date + pd.Timedelta(days=i)) for i in range(n)],
+        "month": [date.month] * n,
+        "day": [date.day] * n
     })
-
     odpu = get_odpu_one(unom, date, conn)
     events2preds[ftrs2odpu] = events2preds.apply(lambda x: add_opdu_features(odpu, x), axis=1)
 
@@ -306,7 +305,7 @@ def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.dat
         
     preds = model.predict_proba(events2preds[features])
     
-    return preds[0].tolist()
+    return preds.tolist()
 
 
 ftrs2odpu = [
