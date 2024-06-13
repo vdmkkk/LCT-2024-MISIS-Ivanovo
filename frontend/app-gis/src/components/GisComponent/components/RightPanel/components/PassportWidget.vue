@@ -18,7 +18,7 @@ const keys = {
       'Тип номера дом': 'house_number_type',
       'Номер дома': 'house_number',
       'Номер корпуса': 'building_number',
-      'Тип номера строения/сооружения': 'structure_number_type',
+      'Тип номера строения/соор��жения': 'structure_number_type',
       'Номер строения': 'structure_number',
       'Муниципальный округ_1': 'municipal_district_1',
       ADDRESS_x: 'address_x',
@@ -46,7 +46,7 @@ const keys = {
       'Общая площадь': 'total_area',
       'Общая площадь жилых помещений': 'total_residential_area',
       'Общая площадь нежилых помещений': 'total_non_residential_area',
-      'Износ объекта (по БТИ)': 'wear_and_tear',
+      'Износ объект�� (по БТИ)': 'wear_and_tear',
       'Материалы стен': 'wall_materials',
       'Признак аварийности здания': 'emergency_status',
       'Количество пассажирских лифтов': 'number_of_passenger_elevators',
@@ -130,7 +130,7 @@ const keys = {
       <h2>{{ caregory }}</h2>
       <div v-for="[title, value] in Object.entries(objects.list)" :key="title">
         <h3>
-          <b>{{ title }}:</b> {{ props.object ? props.object[value] : '' }}
+          <b>{{ title }}:</b> {{ props.object ? props.object.get(value) : '' }}
         </h3>
       </div>
     </div>
