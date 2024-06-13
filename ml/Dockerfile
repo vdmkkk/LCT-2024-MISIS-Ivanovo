@@ -11,7 +11,7 @@ COPY ml/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code into the container at /app
-COPY . .
+COPY ./ml .
 
 # Expose the port that the app runs on
 EXPOSE 8000
