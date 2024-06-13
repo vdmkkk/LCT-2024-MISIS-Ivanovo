@@ -252,6 +252,8 @@ def get_predict_for_all(model: CatBoostClassifier, date: datetime.datetime, conn
     numerical_features = [col for col in events2preds.columns if col not in categorical_features]
 
     # Удаление строк с NaN в числовых признаках
+    events2preds.replace('', np.nan, inplace=True)
+    events2preds[numerical_features] = events2preds[numerical_features].astype(float)
     events2preds[numerical_features] = events2preds[numerical_features].fillna(events2preds[numerical_features].mean())
 
     for col in categorical_features:
@@ -293,12 +295,11 @@ def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.dat
     events2preds = add_cyclic_features(events2preds, 'dayofweek', 31)
     events2preds = add_cyclic_features(events2preds, 'weekofyear', 31)
     events2preds.drop("Дата создания во внешней системе", axis=1, inplace=True)
-
     numerical_features = [col for col in events2preds.columns if col not in categorical_features]
-
     # Удаление строк с NaN в числовых признаках
+    events2preds.replace('', np.nan, inplace=True)
+    events2preds[numerical_features] = events2preds[numerical_features].astype(float)
     events2preds[numerical_features] = events2preds[numerical_features].fillna(events2preds[numerical_features].mean())
-
     for col in categorical_features:
         events2preds[col] = events2preds[col].astype(str)
 
@@ -704,7 +705,10 @@ num2month = {
 def collect_weather(row, weather):
     mon = num2month[row.month]
     day = "{:02d}".format(row.day)
-    row['weather1'], row['weather2'] = weather[mon][day]
+    try:
+        row['weather1'], row['weather2'] = weather[mon][day]
+    except:
+        row['weather1'], row['weather2'] = '', ''
     return row[['weather1', 'weather2']]
 
 
