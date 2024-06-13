@@ -3,6 +3,8 @@ definitions:
     properties:
       consumer_type:
         type: integer
+      date:
+        type: string
       district:
         type: boolean
       heat_network:
@@ -340,4 +342,36 @@ paths:
       summary: Get all incidents
       tags:
       - incident
+  /ml_predict_write:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Incident create
+        in: query
+        name: start_date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully
+          schema:
+            type: integer
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Save predicts from two weeks before start date and two weeks after
+      tags:
+      - ml
 swagger: "2.0"

@@ -25,7 +25,9 @@ func Start(db *sqlx.DB, logger *log.Logs) {
 
 	r.Use(mdw.CORSMiddleware())
 
-	geoDataRepo := repository.InitGeoDataRepo(db)
+	mlPredictRepo := repository.InitMlPredictRepo(db)
+
+	geoDataRepo := repository.InitGeoDataRepo(db, mlPredictRepo)
 	geoDataService := service.InitGeoDataService(geoDataRepo, logger)
 	geoDataHandler := handlers.InitGeoDataHandler(geoDataService)
 
@@ -53,6 +55,11 @@ func Start(db *sqlx.DB, logger *log.Logs) {
 	r.POST("/incident", incidentHandler.Create)
 	r.GET("/incident/all", incidentHandler.GetAll)
 	r.GET("/incident", incidentHandler.GetByID)
+
+	mlPredictService := service.InitMlPredictService(logger, mlPredictRepo)
+	mlPredictHandler := handlers.InitMlPredictHandler(mlPredictService)
+
+	r.POST("/ml_predict_write", mlPredictHandler.SavePredictsFromDate)
 
 	if err := r.Run("0.0.0.0:8080"); err != nil {
 		panic(fmt.Sprintf("error running client: %v", err.Error()))

@@ -26,3 +26,7 @@ type Incident interface {
 	GetAll(ctx context.Context) ([]models.IncidentShowUp, error)
 	GetByID(ctx context.Context, id int) (models.Incident, error)
 }
+
+type MlPredict interface {
+	SavePredictsFromDate(ctx context.Context, startDate string) error
+}

@@ -11,17 +11,12 @@ import (
 )
 
 type geoDataRepo struct {
-	db *sqlx.DB
+	db        *sqlx.DB
+	mlPredict MlPredict
 }
 
-func contains(inpt []string, elem string) bool {
-	for _, val := range inpt {
-		if val == elem {
-			return true
-		}
-	}
-
-	return false
+func InitGeoDataRepo(db *sqlx.DB, predict MlPredict) GeoData {
+	return geoDataRepo{db: db, mlPredict: predict}
 }
 
 func (g geoDataRepo) GetCtpGeoData(ctx context.Context, ctpID string) (models.CtpGeoData, error) {
@@ -241,6 +236,11 @@ func (g geoDataRepo) GetByFiltersWithBuildings(ctx context.Context, filters mode
 			}
 		}
 
+		buildingGeo.Probabilites, err = g.mlPredict.GetByUNOMAndDate(ctx, buildingGeo.Unom, filters.Date)
+		if err != nil {
+			return nil, err
+		}
+
 		var outerKey string
 		if !filters.Tec || !filters.District {
 			outerKey = "all"
@@ -291,10 +291,6 @@ func (g geoDataRepo) GetByFiltersWithBuildings(ctx context.Context, filters mode
 	}
 
 	return res, nil
-}
-
-func InitGeoDataRepo(db *sqlx.DB) GeoData {
-	return geoDataRepo{db: db}
 }
 
 func FlatMap(input [][][][]float64) *[][][]float64 {

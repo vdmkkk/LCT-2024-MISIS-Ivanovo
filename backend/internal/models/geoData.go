@@ -22,15 +22,17 @@ type ResultGeoData struct {
 }
 
 type GeoDataFilter struct {
-	District     bool `json:"district"`
-	Tec          bool `json:"tec"`
-	HeatNetwork  int  `json:"heat_network"`
-	ConsumerType int  `json:"consumer_type"`
+	District     bool   `json:"district"`
+	Tec          bool   `json:"tec"`
+	HeatNetwork  int    `json:"heat_network"`
+	ConsumerType int    `json:"consumer_type"`
+	Date         string `json:"date"`
 }
 
 type BuildingWithMetaGeoData struct {
 	BuildingGeoData
-	Area null.String
+	Area         null.String
+	Probabilites []float64 `json:"probabilites"`
 }
 
 type CtpWithMetaGeoData struct {

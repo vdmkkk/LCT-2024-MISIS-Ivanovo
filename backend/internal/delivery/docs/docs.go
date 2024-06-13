@@ -451,6 +451,55 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/ml_predict_write": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ml"
+                ],
+                "summary": "Save predicts from two weeks before start date and two weeks after",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Incident create",
+                        "name": "start_date",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -459,6 +508,9 @@ const docTemplate = `{
             "properties": {
                 "consumer_type": {
                     "type": "integer"
+                },
+                "date": {
+                    "type": "string"
                 },
                 "district": {
                     "type": "boolean"

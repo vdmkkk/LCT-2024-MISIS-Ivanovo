@@ -26,3 +26,8 @@ type Incident interface {
 	GetByID(ctx context.Context, id int) (models.Incident, error)
 	Create(ctx context.Context, processedIncident models.Incident) (int, error)
 }
+
+type MlPredict interface {
+	GetByUNOMAndDate(ctx context.Context, unom int, datetime string) ([]float64, error)
+	SavePredictsFromDate(ctx context.Context, startDate string) error
+}
