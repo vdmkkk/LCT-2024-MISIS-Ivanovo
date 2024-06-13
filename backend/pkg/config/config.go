@@ -15,6 +15,8 @@ const (
 	DBPort     = "DB_PORT"
 	DBHost     = "DB_HOST"
 	TimeOut    = "TIME_OUT"
+	MlAppHost  = "ML_APP_HOST"
+	MlAppPort  = "ML_APP_PORT"
 )
 
 func InitConfig() {
