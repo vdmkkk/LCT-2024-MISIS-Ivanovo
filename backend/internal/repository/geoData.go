@@ -165,9 +165,8 @@ func (g geoDataRepo) GetByFiltersWithBuildings(ctx context.Context, filters mode
 
 	switch filters.ConsumerType {
 	case 1:
-		queryBuilder = queryBuilder.Where("b.purpose IN ('нежилое','гараж','ЦТП','уборная','хранилище','склад'," +
-			"'архив','дезинфекционная камера','кухня клиническая','хозблок','трансформаторная подстанция'," +
-			"'овощехранилище','нежилое,ГПТУ')")
+		queryBuilder = queryBuilder.Where("b.purpose IN ('многоквартирный дом'," +
+			"'блокированный жилой дом')")
 	case 2:
 		queryBuilder = queryBuilder.Where("b.purpose IN ('общежитие','детский дом культуры','школьное','отделение " +
 			"милиции','ясли','стоматологическая поликлиника','учебно-воспитательное','учреждение,мастерские','музей'," +
