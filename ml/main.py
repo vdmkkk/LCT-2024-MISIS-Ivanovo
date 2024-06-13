@@ -297,6 +297,8 @@ def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.dat
     events2preds = add_cyclic_features(events2preds, 'day', 31)
     events2preds = add_cyclic_features(events2preds, 'dayofweek', 31)
     events2preds = add_cyclic_features(events2preds, 'weekofyear', 31)
+
+    ans = events2preds[['Дата создания во внешней системе']]
     events2preds.drop("Дата создания во внешней системе", axis=1, inplace=True)
     numerical_features = [col for col in events2preds.columns if col not in categorical_features]
     # Удаление строк с NaN в числовых признаках
@@ -307,8 +309,10 @@ def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.dat
         events2preds[col] = events2preds[col].astype(str)
 
     preds = model.predict_proba(events2preds[features])
+    ans['preds'] = preds.tolist()
+    ans['Дата создания во внешней системе'] = ans['Дата создания во внешней системе'].dt.strftime('%d.%m.%Y')
 
-    return preds.tolist()
+    return ans[['Дата создания во внешней системе', 'preds']].set_index('Дата создания во внешней системе')['preds'].to_dict()
 
 
 ftrs2odpu = [
