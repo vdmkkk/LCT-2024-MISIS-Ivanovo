@@ -154,7 +154,6 @@ func (i incidentRepo) GetByID(ctx context.Context, id int) (models.Incident, err
 		var coordinatesJSON []byte
 		var payloadJSON []byte
 
-		// TODO: FIX PAYLOAD
 		err = rows.Scan(&incident.ID, &coordinatesJSON, &payloadJSON, &incident.CtpID,
 			&handledUnom.Unom, &handledUnom.HoursToCool, &handledUnom.PriorityGroup)
 		if err != nil {
@@ -167,7 +166,7 @@ func (i incidentRepo) GetByID(ctx context.Context, id int) (models.Incident, err
 				return models.Incident{}, err
 			}
 		}
-		
+
 		if coordinatesJSON != nil {
 			err = json.Unmarshal(coordinatesJSON, &incident.Coordinates)
 			if err != nil {
