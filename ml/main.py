@@ -940,7 +940,7 @@ class CatBoostModel:
                         }
 
         except Exception as e:
-                print(f"2Ошибка при подключении к базе данных: {e}")
+                print(f"Ошибка при подключении к базе данных: {e}")
                 return None
 
 
@@ -1041,7 +1041,6 @@ class CatBoostModel:
             """
             cursor = conn.cursor()
             cursor.execute(query, (int(unom),))
-            print("bruh")
             result = cursor.fetchone()
             if result:
                 # Получаем названия столбцов из описания курсора
@@ -1097,7 +1096,7 @@ class CatBoostModel:
                 return None
 
         except Exception as e:
-                print(f"3Ошибка при подключении к базе данных: {e}")
+                print(f"Ошибка при подключении к базе данных: {e}")
                 return None
 
 
@@ -1202,10 +1201,9 @@ def connect_to_db():
             user=DB_USER,
             password=DB_PASSWORD
         )
-        print("Подключение к базе данных успешно установлено")
         return conn
     except Exception as e:
-        print(f"1Ошибка при подключении к базе данных: {e}")
+        print("1Ошибка при подключении к базе данных: {e}")
         return None
 
 
