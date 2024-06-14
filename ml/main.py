@@ -320,7 +320,7 @@ def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.dat
     ans['incidents_count'] = events.groupby('Наименование').count()['Дата создания во внешней системе'].to_dict()
 
 
-    odpu_stat = odpu[['Месяц/Год', 'volume1forhour', 'volume2forhour', 'q2forhour']]
+    odpu_stat = odpu[['Месяц/Год', 'volume1forhour', 'volume2forhour', 'q2forhour', 'difference_supply_return_mix_all', 'difference_supply_return_leak_all', 'temperature_supply_all', 'temperature_return_all']]
     odpu_stat = odpu_stat[(odpu_stat['Месяц/Год'] >= date_start) &
                         (odpu_stat['Месяц/Год'] <= date_end)]
     odpu_stat['Месяц/Год'] = odpu_stat['Месяц/Год'].dt.strftime('%d.%m.%Y')
@@ -483,6 +483,10 @@ def get_odpu_one(unom: int, date: datetime.datetime, conn):
     odpu['volume1forhour'] = odpu['Объём поданого теплоносителя в систему ЦО'] / (odpu['Наработка часов счётчика'])
     odpu['volume2forhour'] = odpu['Объём обратного теплоносителя из системы ЦО'] / (odpu['Наработка часов счётчика'])
     odpu['q2forhour'] = odpu['Расход тепловой энергии'].astype(float) / (odpu['Наработка часов счётчика'])
+    odpu['difference_supply_return_mix_all'] = odpu['Разница между подачей и обраткой(Подмес)'].astype(float) / (odpu['Наработка часов счётчика']) * 24
+    odpu['difference_supply_return_leak_all'] = odpu['Разница между подачей и обраткой(Утечка)'].astype(float) / (odpu['Наработка часов счётчика']) * 24
+    odpu['temperature_supply_all'] = odpu['Температура подачи'].astype(float) / (odpu['Наработка часов счётчика']) * 24
+    odpu['temperature_return_all'] = odpu['Температура обратки'].astype(float) / (odpu['Наработка часов счётчика']) * 24
 
     return odpu
 
