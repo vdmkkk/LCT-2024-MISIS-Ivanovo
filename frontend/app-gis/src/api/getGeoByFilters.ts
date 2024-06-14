@@ -18,6 +18,27 @@ const getGeoByFilters = async () => {
     body.district = false;
     body.tec = true;
   }
+
+  if (optionsStore.filters.get('web') == 'Магистральная сеть') {
+    body.heat_network = 2;
+  }
+  if (optionsStore.filters.get('web') == 'Распределительная сеть') {
+    body.heat_network = 3;
+  }
+  if (optionsStore.filters.get('web') == 'Потребители с ИТП') {
+    body.heat_network = 1;
+  }
+
+  if (optionsStore.filters.get('consumer') == 'Социальный') {
+    body.consumer_type = 2;
+  }
+  if (optionsStore.filters.get('consumer') == 'Промышленный') {
+    body.consumer_type = 3;
+  }
+  if (optionsStore.filters.get('consumer') == 'МКД') {
+    body.consumer_type = 1;
+  }
+
   return await api
     .put('/geo/by_filters', body)
     .then((res) => {

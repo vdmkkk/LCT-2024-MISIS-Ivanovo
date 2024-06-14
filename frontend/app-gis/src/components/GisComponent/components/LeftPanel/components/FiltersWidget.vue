@@ -51,6 +51,7 @@ const clearAll = () => {
   district.value = null;
   web.value = null;
   consumer.value = null;
+  handleFilterChange();
 };
 </script>
 

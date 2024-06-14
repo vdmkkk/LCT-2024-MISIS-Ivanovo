@@ -12,7 +12,7 @@ import { RightPanelWidgets } from 'src/types/NavigationButtonsType';
 import PassportWidget from './components/PassportWidget.vue';
 import ReportWidget from './components/ReportWidget.vue';
 import IncidentsWidget from './components/IncidentsWidget.vue';
-import PredictWidget from './components/PredictWidget.vue';
+import PredictWidget from './components/PredictWidget/PredictWidget.vue';
 
 const props = defineProps<{
   placeId: number | null;

@@ -69,45 +69,79 @@ const bindMap = () => {
 
   mapRef.value = map;
 
-  handleMarkers('ctp');
+  // handleMarkers('ctp');
 };
 
-const handleMarkers = (type: 'ctp' | 'tec') => {
+const handleMarkers = (type: 'ctp' | 'tec', ctps: any) => {
   if (!mapRef.value) return;
 
-  markerClustererRef.value = new MarkerClusterer({
-    map: mapRef.value,
-    markers: [], // not sure why, but it works only if I add markers one-by-one later :/
-  });
-
-  coordinates.forEach((position, key) => {
-    const marker = new google.maps.Marker({
-      position,
-      title: 'Marker Title',
-      icon: {
-        url: `src/assets/markers/${type}${
-          currMarker.value == key ? '_active' : ''
-        }.png`,
-        scaledSize: new window.google.maps.Size(40, 40),
-      },
-    });
-
-    marker.addListener('click', () => {
-      currMarker.value == key
-        ? (currMarker.value = null)
-        : (currMarker.value = key);
-      marker.set('icon', {
-        url: `src/assets/markers/${type}${
-          currMarker.value == key ? '_active' : ''
-        }.png`,
-        scaledSize: new window.google.maps.Size(40, 40),
+  const newMarkers = [];
+  for (let i = 0; i < ctps.length; i++) {
+    const { ctp_id, center: position, Source: tec } = ctps[i];
+    if (position) {
+      const marker = new google.maps.Marker({
+        position: { lat: position[1], lng: position[0] },
+        title: 'Marker Title',
+        icon: {
+          url: `src/assets/markers/${type}${
+            currMarker.value == i ? '_active' : ''
+          }.png`,
+          scaledSize: new window.google.maps.Size(40, 40),
+        },
       });
-    });
-    markersRef.value.push(
-      new Map<string, google.maps.Marker>([[key.toString(), marker]])
-    );
-    markerClustererRef.value?.addMarker(marker);
-  });
+
+      marker.addListener('click', () => {
+        console.warn(ctp_id);
+        currMarker.value =
+          currMarker.value === i.toString() ? null : i.toString();
+        marker.set('icon', {
+          url: `src/assets/markers/${type}${
+            currMarker.value === i.toString() ? '_active' : ''
+          }.png`,
+          scaledSize: new window.google.maps.Size(40, 40),
+        });
+      });
+
+      markersRef.value.push(
+        new Map<string, google.maps.Marker>([[i.toString(), marker]])
+      );
+      newMarkers.push(marker);
+      marker.setMap(mapRef.value);
+    }
+  }
+
+  console.error(newMarkers);
+
+  // markerClustererRef.value = new MarkerClusterer({
+  //   markers: newMarkers,
+  //   map: mapRef.value,
+  // });
+};
+
+const clearMarkers = () => {
+  if (markerClustererRef.value) {
+    console.error('123');
+    toRaw(markerClustererRef.value).clearMarkers();
+    // markerClustererRef.value.setMap(null);
+    // @ts-ignore //
+    // Object.entries(markersRef.value).forEach(([key, marker]) => {
+    //   // @ts-ignore //
+    //   for (const [key, item] of marker.entries()) {
+    //     toRaw(item).setVisible(false);
+    //     toRaw(item).setMap(null);
+    //     toRaw(markerClustererRef.value)?.removeMarker(item);
+    //   }
+    // });
+    // console.log(markerClustererRef.value);
+    // console.log(markersRef);
+    // markersRef.value = [];
+    // Object.entries(markersRef.value).forEach(
+    //   ([key: number, marker: google.maps.Marker]) => {
+    //     console.error(marker);
+    //     toRaw(marker).setMap(null);
+    //   }
+    // );
+  }
 };
 
 const updateMarkers = (type: 'ctp' | 'tec') => {
@@ -144,6 +178,7 @@ const handleBuildingRender = (buidlings: GeoType3) => {
           strokeWeight: 2,
           fillColor: '#9c9c9c',
           fillOpacity: 0.35,
+          zIndex: 999,
         });
         polygonsRef.value.push(newPolygon);
         newPolygon.setMap(mapRef.value);
@@ -161,47 +196,57 @@ onMounted(() => {
 const loadData = async () => {
   $q.loading.show({ message: 'Идет загрузка карты. Пожалуйста, подождите' });
 
-  if (polygonsRef.value) {
+  if (polygonsRef.value.length > 0) {
     polygonsRef.value.forEach((polygon) => {
-      polygon.setMap(null);
-      polygon.setPath([]);
+      toRaw(polygon).setMap(null);
+      toRaw(polygon).setPath([]);
     });
     polygonsRef.value = [];
   }
 
-  if (areaPolygonsRef.value) {
+  if (areaPolygonsRef.value.length > 0) {
     areaPolygonsRef.value.forEach((polygon) => {
-      polygon.setMap(null);
-      polygon.setPath([]);
+      toRaw(polygon).setMap(null);
+      toRaw(polygon).setPath([]);
     });
     areaPolygonsRef.value = [];
   }
 
-  await getGeoByFilters().then((res) => {
-    (Object.entries(res) as GeoType1[]).forEach(([district, districtObj]) => {
-      (Object.entries(districtObj) as GeoType2[]).forEach(
-        ([tec, tecObjects], index) => {
-          // @ts-ignore //
-          const allCoordinates = handleBuildingRender(tecObjects['buildings']);
-          // @ts-ignore //
-          if (tec != 'null' && tec != '') {
-            const newPolygon = new google.maps.Polygon({
-              paths: CreateArea(allCoordinates),
-              strokeColor: colors?.[index % 10].toString(),
-              strokeOpacity: 0.8,
-              strokeWeight: 2,
-              fillColor: colors?.[index % 10].toString(),
-              fillOpacity: 0.2,
-            });
-            areaPolygonsRef.value.push(newPolygon);
-            newPolygon.setMap(mapRef.value);
-            // newPolygon.addListener('click', () => (currPolygon.value = unom));
+  clearMarkers();
+
+  await getGeoByFilters()
+    .then((res) => {
+      (Object.entries(res) as GeoType1[]).forEach(([district, districtObj]) => {
+        (Object.entries(districtObj) as GeoType2[]).forEach(
+          ([tec, tecObjects], index) => {
+            const allCoordinates = handleBuildingRender(
+              // @ts-ignore //
+              tecObjects['buildings']
+            );
+            // @ts-ignore //
+            handleMarkers('ctp', tecObjects['ctps']);
+            // @ts-ignore //
+            if (tec != 'null' && tec != '') {
+              const newPolygon = new google.maps.Polygon({
+                paths: CreateArea(allCoordinates),
+                strokeColor: colors?.[index % 10].toString(),
+                strokeOpacity: 0.8,
+                strokeWeight: 2,
+                fillColor: colors?.[index % 10].toString(),
+                fillOpacity: 0.2,
+              });
+              areaPolygonsRef.value.push(newPolygon);
+              newPolygon.setMap(mapRef.value);
+              newPolygon.addListener('click', () => clickMap());
+            }
           }
-        }
-      );
+        );
+      });
+      $q.loading.hide();
+    })
+    .catch((e) => {
+      $q.loading.hide();
     });
-    $q.loading.hide();
-  });
 };
 
 const filtersObject = computed(() => {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// @ts-nocheck // i'm so sorry
 const props = defineProps<{
   object: Map<string, any>;
 }>();
@@ -130,7 +131,8 @@ const keys = {
       <h2>{{ caregory }}</h2>
       <div v-for="[title, value] in Object.entries(objects.list)" :key="title">
         <h3>
-          <b>{{ title }}:</b> {{ props.object ? props.object.get(value) : '' }}
+          <b>{{ title }}:</b>
+          {{ props.object ? props.object[value] : '' }}
         </h3>
       </div>
     </div>
