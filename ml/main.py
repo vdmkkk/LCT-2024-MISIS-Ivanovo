@@ -55,7 +55,7 @@ async def predict_all(date: datetime.datetime):
 
 
 @app.post("/predict_one/")
-async def predict_one(unom: int, date: datetime.datetime, n: int):
+async def predict_one(unom: int, date: datetime.datetime, n: int, date_start: datetime.datetime, date_end: datetime.datetime):
     try:
         conn = psycopg2.connect(
             user=DB_USER,
@@ -66,7 +66,7 @@ async def predict_one(unom: int, date: datetime.datetime, n: int):
         )
 
         # Получаем предсказания
-        preds = get_predict_for_one(model, unom, date, n, conn)
+        preds = get_predict_for_one(model, unom, date, n, date_start, date_end, conn)
 
         return preds
 
@@ -269,7 +269,7 @@ def get_predict_for_all(model: CatBoostClassifier, date: datetime.datetime, conn
     return events2preds[['УНОМ', 'preds']].set_index('УНОМ')['preds'].to_dict()
 
 
-def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.datetime, n: int, conn) -> dict:
+def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.datetime, n: int, date_start, date_end, conn) -> dict:
     agg_data = get_agg_data_one(unom, conn)
     events2preds = pd.DataFrame({
         "УНОМ": [unom] * n,
@@ -312,7 +312,26 @@ def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.dat
     ans['preds'] = preds.tolist()
     ans['Дата создания во внешней системе'] = ans['Дата создания во внешней системе'].dt.strftime('%d.%m.%Y')
 
-    return ans[['Дата создания во внешней системе', 'preds']].set_index('Дата создания во внешней системе')['preds'].to_dict()
+    ans = {"predict": ans[['Дата создания во внешней системе', 'preds']].set_index('Дата создания во внешней системе')['preds'].to_dict()}
+
+
+    events = events[(events['Дата создания во внешней системе'] >= date_start) &
+                    (events['Дата создания во внешней системе'] <= date_end)]
+    ans['incidents_count'] = events.groupby('Наименование').count()['Дата создания во внешней системе'].to_dict()
+
+
+    odpu_stat = odpu[['Месяц/Год', 'volume1forhour', 'volume2forhour', 'q2forhour']]
+    odpu_stat = odpu_stat[(odpu_stat['Месяц/Год'] >= date_start) &
+                        (odpu_stat['Месяц/Год'] <= date_end)]
+    odpu_stat['Месяц/Год'] = odpu_stat['Месяц/Год'].dt.strftime('%d.%m.%Y')
+    odpu_stat[['volume1forhour', 'volume2forhour', 'q2forhour']] *= 24
+    odpu_stat.rename(columns={
+        'volume1forhour': 'volume1', 'volume2forhour': 'volume2', 'q2forhour': 'q2'
+    }, inplace=True)
+    odpu_stat[['volume1', 'volume2', 'q2']] = odpu_stat[['volume1', 'volume2', 'q2']].fillna(odpu_stat[['volume1', 'volume2', 'q2']].mean())
+    ans['odpu_plot'] = odpu_stat.set_index('Месяц/Год').to_dict()
+
+    return ans
 
 
 ftrs2odpu = [
