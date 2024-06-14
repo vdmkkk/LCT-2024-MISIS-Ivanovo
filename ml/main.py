@@ -326,6 +326,7 @@ def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.dat
         'volume1forhour': 'volume1', 'volume2forhour': 'volume2', 'q2forhour': 'q2'
     }, inplace=True)
     odpu_stat[['volume1', 'volume2', 'q2']] = odpu_stat[['volume1', 'volume2', 'q2']].fillna(odpu_stat[['volume1', 'volume2', 'q2']].mean())
+    
     ans['odpu_plot'] = odpu_stat.set_index('Месяц/Год').to_dict()
 
     return ans
