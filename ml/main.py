@@ -52,7 +52,7 @@ async def predict_all(date: datetime.datetime):
 
 
 @app.post("/predict_one/")
-async def predict_one(unom: int, date: datetime.datetime, n: int):
+async def predict_one(unom: int, date: datetime.datetime, n: int, date_start: datetime.datetime, date_end: datetime.datetime):
     try:
         conn = psycopg2.connect(
             user=DB_USER,
@@ -63,7 +63,7 @@ async def predict_one(unom: int, date: datetime.datetime, n: int):
         )
 
         # Получаем предсказания
-        preds = get_predict_for_one(model, unom, date, n, conn)
+        preds = get_predict_for_one(model, unom, date, n, date_start, date_end, conn)
 
         return preds
 
@@ -266,7 +266,7 @@ def get_predict_for_all(model: CatBoostClassifier, date: datetime.datetime, conn
     return events2preds[['УНОМ', 'preds']].set_index('УНОМ')['preds'].to_dict()
 
 
-def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.datetime, n: int, conn) -> dict:
+def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.datetime, n: int, date_start, date_end, conn) -> dict:
     agg_data = get_agg_data_one(unom, conn)
     events2preds = pd.DataFrame({
         "УНОМ": [unom] * n,
@@ -294,6 +294,8 @@ def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.dat
     events2preds = add_cyclic_features(events2preds, 'day', 31)
     events2preds = add_cyclic_features(events2preds, 'dayofweek', 31)
     events2preds = add_cyclic_features(events2preds, 'weekofyear', 31)
+
+    ans = events2preds[['Дата создания во внешней системе']]
     events2preds.drop("Дата создания во внешней системе", axis=1, inplace=True)
     numerical_features = [col for col in events2preds.columns if col not in categorical_features]
     # Удаление строк с NaN в числовых признаках
@@ -304,8 +306,30 @@ def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.dat
         events2preds[col] = events2preds[col].astype(str)
 
     preds = model.predict_proba(events2preds[features])
+    ans['preds'] = preds.tolist()
+    ans['Дата создания во внешней системе'] = ans['Дата создания во внешней системе'].dt.strftime('%d.%m.%Y')
 
-    return preds.tolist()
+    ans = {"predict": ans[['Дата создания во внешней системе', 'preds']].set_index('Дата создания во внешней системе')['preds'].to_dict()}
+
+
+    events = events[(events['Дата создания во внешней системе'] >= date_start) &
+                    (events['Дата создания во внешней системе'] <= date_end)]
+    ans['incidents_count'] = events.groupby('Наименование').count()['Дата создания во внешней системе'].to_dict()
+
+
+    odpu_stat = odpu[['Месяц/Год', 'volume1forhour', 'volume2forhour', 'q2forhour', 'difference_supply_return_mix_all', 'difference_supply_return_leak_all', 'temperature_supply_all', 'temperature_return_all']]
+    odpu_stat = odpu_stat[(odpu_stat['Месяц/Год'] >= date_start) &
+                        (odpu_stat['Месяц/Год'] <= date_end)]
+    odpu_stat['Месяц/Год'] = odpu_stat['Месяц/Год'].dt.strftime('%d.%m.%Y')
+    odpu_stat[['volume1forhour', 'volume2forhour', 'q2forhour']] *= 24
+    odpu_stat.rename(columns={
+        'volume1forhour': 'volume1', 'volume2forhour': 'volume2', 'q2forhour': 'q2'
+    }, inplace=True)
+    odpu_stat[['volume1', 'volume2', 'q2']] = odpu_stat[['volume1', 'volume2', 'q2']].fillna(odpu_stat[['volume1', 'volume2', 'q2']].mean())
+    
+    ans['odpu_plot'] = odpu_stat.set_index('Месяц/Год').to_dict()
+
+    return ans
 
 
 ftrs2odpu = [
@@ -456,6 +480,10 @@ def get_odpu_one(unom: int, date: datetime.datetime, conn):
     odpu['volume1forhour'] = odpu['Объём поданого теплоносителя в систему ЦО'] / (odpu['Наработка часов счётчика'])
     odpu['volume2forhour'] = odpu['Объём обратного теплоносителя из системы ЦО'] / (odpu['Наработка часов счётчика'])
     odpu['q2forhour'] = odpu['Расход тепловой энергии'].astype(float) / (odpu['Наработка часов счётчика'])
+    odpu['difference_supply_return_mix_all'] = odpu['Разница между подачей и обраткой(Подмес)'].astype(float) / (odpu['Наработка часов счётчика']) * 24
+    odpu['difference_supply_return_leak_all'] = odpu['Разница между подачей и обраткой(Утечка)'].astype(float) / (odpu['Наработка часов счётчика']) * 24
+    odpu['temperature_supply_all'] = odpu['Температура подачи'].astype(float) / (odpu['Наработка часов счётчика']) * 24
+    odpu['temperature_return_all'] = odpu['Температура обратки'].astype(float) / (odpu['Наработка часов счётчика']) * 24
 
     return odpu
 
