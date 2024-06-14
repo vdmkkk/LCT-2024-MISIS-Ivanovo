@@ -278,7 +278,9 @@ func (g geoDataRepo) GetByFiltersWithBuildings(ctx context.Context, filters mode
 				if _, ok := ctpIDs[ctpGeo.CtpID.String]; !ok {
 					elem := res[outerKey][innerKey]
 					elem.Ctps = append(elem.Ctps, ctpGeo)
-					elem.Tecs = append(elem.Tecs, tec)
+					if tec.Name.Valid {
+						elem.Tecs = append(elem.Tecs, tec)
+					}
 					res[outerKey][innerKey] = elem
 					ctpIDs[ctpGeo.CtpID.String] = struct{}{}
 				}
@@ -291,7 +293,9 @@ func (g geoDataRepo) GetByFiltersWithBuildings(ctx context.Context, filters mode
 				if _, ok := ctpIDs[ctpGeo.CtpID.String]; !ok {
 					elem := res[outerKey][innerKey]
 					elem.Ctps = append(elem.Ctps, ctpGeo)
-					elem.Tecs = append(elem.Tecs, tec)
+					if tec.Name.Valid {
+						elem.Tecs = append(elem.Tecs, tec)
+					}
 					res[outerKey][innerKey] = elem
 					ctpIDs[ctpGeo.CtpID.String] = struct{}{}
 				}
