@@ -242,7 +242,9 @@ func (g geoDataRepo) GetByFiltersWithBuildings(ctx context.Context, filters mode
 
 		err = json.Unmarshal(tecCoordinatesJSON, &tec.Coordinates)
 		if err != nil {
-			return nil, err
+			if !strings.Contains(err.Error(), "unexpected") {
+				return nil, err
+			}
 		}
 
 		if filters.Date != "" {
