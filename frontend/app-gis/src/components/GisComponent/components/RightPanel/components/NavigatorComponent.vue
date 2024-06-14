@@ -81,7 +81,7 @@ watch(props, handleClose);
   position: absolute;
   top: 2.5vh;
   margin-top: 200px;
-  right: 400px;
+  right: 500px;
   transition: right 0.3s ease-in-out;
   border-radius: 30px;
   padding: 30px;
@@ -124,7 +124,7 @@ watch(props, handleClose);
 }
 
 .navigation-container.open {
-  right: 400px;
+  right: 500px;
 }
 
 .navigation-container.closed {

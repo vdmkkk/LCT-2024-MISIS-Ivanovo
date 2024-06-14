@@ -29,7 +29,7 @@ const keys = {
       'Наименование элемента планировочной структуры или улично-дорожной сети':
         'planning_element_name',
     },
-    logo: 'home_pin',
+    logo: 'location_city',
   },
   'Идентификатор и УНОМ': {
     list: {
@@ -128,6 +128,7 @@ const keys = {
   <div class="passport-container">
     <h1>Паспорт</h1>
     <div v-for="[caregory, objects] in Object.entries(keys)" :key="caregory">
+      <i class="material-icons">{{ objects.logo }}</i>
       <h2>{{ caregory }}</h2>
       <div v-for="[title, value] in Object.entries(objects.list)" :key="title">
         <h3>

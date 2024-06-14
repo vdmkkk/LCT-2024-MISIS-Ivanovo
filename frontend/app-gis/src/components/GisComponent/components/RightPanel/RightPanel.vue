@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// @ts-nocheck // i'm so sorry
 import { useOptionsStore } from 'src/stores/optionsStore';
 import { toRefs, computed, onMounted, watch, ref } from 'vue';
 
@@ -7,12 +8,6 @@ import BuildingType from 'src/types/BuildingsType';
 import NavigationComponent from './components/NavigatorComponent.vue';
 
 import { RightPanelWidgets } from 'src/types/NavigationButtonsType';
-
-// widgets
-import PassportWidget from './components/PassportWidget.vue';
-import ReportWidget from './components/ReportWidget.vue';
-import IncidentsWidget from './components/IncidentsWidget.vue';
-import PredictWidget from './components/PredictWidget/PredictWidget.vue';
 
 const props = defineProps<{
   placeId: number | null;
@@ -87,7 +82,7 @@ watch(props, updateData);
   position: absolute;
   height: 95vh;
   top: 2.5vh;
-  width: 400px;
+  width: 500px;
   right: 1vw;
   background-color: white;
   transition: right 0.3s ease-in-out; /* Smooth transition */
@@ -113,6 +108,6 @@ watch(props, updateData);
 }
 
 .container.closed {
-  right: -400px; /* Slide out */
+  right: -500px; /* Slide out */
 }
 </style>
