@@ -236,9 +236,11 @@ func (g geoDataRepo) GetByFiltersWithBuildings(ctx context.Context, filters mode
 			}
 		}
 
-		buildingGeo.Probabilites, err = g.mlPredict.GetByUNOMAndDate(ctx, buildingGeo.Unom, filters.Date)
-		if err != nil {
-			return nil, err
+		if filters.Date != "" {
+			buildingGeo.Probabilites, err = g.mlPredict.GetByUNOMAndDate(ctx, buildingGeo.Unom, filters.Date)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		var outerKey string
