@@ -161,7 +161,7 @@ func (i incidentRepo) GetByID(ctx context.Context, id int) (models.Incident, err
 		}
 
 		if payloadJSON != nil {
-			err = json.Unmarshal(coordinatesJSON, &incident.Payload)
+			err = json.Unmarshal(payloadJSON, &incident.Payload)
 			if err != nil {
 				return models.Incident{}, err
 			}
