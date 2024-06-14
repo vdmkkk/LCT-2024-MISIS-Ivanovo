@@ -109,3 +109,13 @@ func (i incidentServ) GetByID(ctx context.Context, id int) (models.Incident, err
 
 	return incident, nil
 }
+
+func (i incidentServ) GetAllByUNOM(ctx context.Context, unom int) ([]models.Incident, error) {
+	incidents, err := i.incidentRepo.GetAllByUNOM(ctx, unom)
+	if err != nil {
+		i.logs.Error(err.Error())
+		return nil, err
+	}
+
+	return incidents, nil
+}

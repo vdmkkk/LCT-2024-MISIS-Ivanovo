@@ -342,6 +342,40 @@ paths:
       summary: Get all incidents
       tags:
       - incident
+  /incidents_by_unom:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Unom
+        in: query
+        name: unom
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully
+          schema:
+            items:
+              $ref: '#/definitions/models.Incident'
+            type: array
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get incidents by unom
+      tags:
+      - incident
   /ml_predict_write:
     post:
       consumes:

@@ -55,6 +55,7 @@ func Start(db *sqlx.DB, logger *log.Logs) {
 	r.POST("/incident", incidentHandler.Create)
 	r.GET("/incident/all", incidentHandler.GetAll)
 	r.GET("/incident", incidentHandler.GetByID)
+	r.GET("/incidents_by_unom", incidentHandler.GetByUNOM)
 
 	mlPredictService := service.InitMlPredictService(logger, mlPredictRepo)
 	mlPredictHandler := handlers.InitMlPredictHandler(mlPredictService)

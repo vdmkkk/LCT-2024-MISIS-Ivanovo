@@ -103,3 +103,33 @@ func (i IncidentHandler) GetByID(c *gin.Context) {
 
 	c.JSON(http.StatusOK, incident)
 }
+
+// @Summary Get incidents by unom
+// @Tags incident
+// @Accept  json
+// @Produce  json
+// @Param unom query int true "Unom"
+// @Success 200 {object} []models.Incident "Successfully"
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /incidents_by_unom [get]
+func (i IncidentHandler) GetByUNOM(c *gin.Context) {
+	unomRaw := c.Query("unom")
+	unom, err := strconv.Atoi(unomRaw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no valid id provided"})
+		return
+	}
+
+	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(viper.GetInt(config.TimeOut))*time.Millisecond)
+	defer cancel()
+
+	incidents, err := i.incidentServ.GetAllByUNOM(ctx, unom)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, incidents)
+}

@@ -186,3 +186,34 @@ func (i incidentRepo) GetByID(ctx context.Context, id int) (models.Incident, err
 
 	return incident, nil
 }
+
+func (i incidentRepo) GetAllByUNOM(ctx context.Context, unom int) ([]models.Incident, error) {
+	query := `SELECT incident_id FROM incidents_handled_unoms WHERE handled_unom = $1`
+
+	rows, err := i.db.QueryContext(ctx, query, unom)
+	if err != nil {
+		return nil, err
+	}
+
+	var incidents []models.Incident
+	for rows.Next() {
+		var incidentID int
+		err = rows.Scan(&incidentID)
+		if err != nil {
+			return nil, err
+		}
+
+		incident, err := i.GetByID(ctx, incidentID)
+		if err != nil {
+			return nil, err
+		}
+		incidents = append(incidents, incident)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return incidents, nil
+}
