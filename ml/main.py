@@ -24,6 +24,14 @@ warnings.filterwarnings("ignore")
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Разрешить все источники
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 model = CatBoostClassifier()
 model.load_model('model_task1')
 
