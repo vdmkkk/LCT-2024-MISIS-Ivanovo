@@ -74,6 +74,29 @@ async def predict_one(unom: int, date: datetime.datetime, n: int, date_start: da
         conn.close()
 
 
+@app.get("/get_stats/")
+async def get_stats(date: datetime.datetime):
+    try:
+        conn = psycopg2.connect(
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,  # локальный хост
+            port="5432",  # стандартный порт PostgreSQL
+            database=DB_NAME
+        )
+
+        # Получаем предсказания
+        ans = get_stats_from_bd(date, conn)
+
+        return ans
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    finally:
+        conn.close()
+
+
 features = [
     'УНОМ',
     'month',
@@ -331,6 +354,97 @@ def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.dat
 
     return ans
 
+num2month = {
+    10: "october",
+    11: "november",
+    12: "december",
+    1: "january",
+    2: "february",
+    3: "march",
+    4: "april",
+    5: "may",
+    6: "june",
+    7: "july",
+    8: "august",
+    9: "september"
+}
+
+
+def get_stats_from_bd(date, conn):
+    ans = {}
+
+
+    events = pd.read_sql(
+        f"""
+        SELECT *
+        FROM events
+        WHERE 
+            events.creation_date <= '{date.strftime("%Y-%m-%d")}'
+            AND events.creation_date >= '{(date - pd.Timedelta(days=14)).strftime("%Y-%m-%d")}'
+        """, conn
+    )
+    events.rename(columns={
+        'name': 'Наименование',
+        'source': 'Источник',
+        'creation_date': 'Дата создания во внешней системе',
+        'closure_date': 'Дата закрытия',
+        'district': 'Округ',
+        'unom': 'УНОМ',
+        'address': 'Адрес',
+        'event_completion_date': 'Дата и время завершения события'
+    }, inplace=True)
+
+    eventNames2labels = {
+        "P1 <= 0": "Давление не в норме",
+        "P2 <= 0": "Давление не в норме",
+        "T1 > max": "T > max",
+        "T1 < min": "T < min",
+        "Недостаточная температура подачи в центральном отоплении (Недотоп)": "T < min",
+        "Превышение температуры подачи в центральном отоплении (Перетоп)": "T > max",
+        "Утечка теплоносителя": "Утечка",
+        "Течь в системе отопления": "Утечка",
+        "Температура в квартире ниже нормативной": "T < min",
+        "Отсутствие отопления в доме": "T < min",
+        "Сильная течь в системе отопления": "Утечка",
+        "Температура в помещении общего пользования ниже нормативной": "T < min",
+        "Аварийная протечка труб в подъезде": "Утечка",
+        "Протечка труб в подъезде": "Утечка",
+        "Температура в помещении общего пользования ниже нормативной": "T < min",
+        "Отсутствие отопления в доме": "T < min",
+        "Температура в квартире ниже нормативной": "T < min",
+        "Течь в системе отопления": "Утечка",
+        "Сильная течь в системе отопления": "Утечка",
+
+    }
+
+
+    events['Наименование'] = events['Наименование'].apply(lambda x: eventNames2labels[x])
+    events['Дата создания во внешней системе'] = pd.to_datetime(events['Дата создания во внешней системе'])
+    events['Дата и время завершения события'] = pd.to_datetime(events['Дата и время завершения события'])
+    # events.sort_values(by='Дата создания во внешней системе', inplace=True, ignore_index=True)
+
+    counts = events.groupby('Наименование').count()['Дата создания во внешней системе']
+
+
+    ans['event_counts'] = counts.to_dict()
+    ans['count_collect_tasks'] = len(events[events['Дата и время завершения события'] <= date])
+    ans['count_current_tasks'] = len(events[events['Дата создания во внешней системе'] <= date])
+
+    with open('weather.json', 'r', encoding='utf-8') as file:
+        weather = json.load(file)
+
+    mon = num2month[date.month]
+    day = "{:02d}".format(date.day)
+    weather1, weather2 = weather[mon][day]
+    ans['weather1'] = weather1
+    ans['weather2'] = weather2
+
+    n_unique_unoms = pd.read_sql("SELECT COUNT(DISTINCT unom) AS unique_unom_count FROM buildings;", conn).unique_unom_count[0]
+    n_unique_unoms_with_event = events['УНОМ'].nunique()
+    ans['n_unoms_without_events'] = int(n_unique_unoms) - int(n_unique_unoms_with_event)
+
+    return ans
+
 
 ftrs2odpu = [
     'mean_volume1forhour',
@@ -430,6 +544,7 @@ def get_odpu(date: datetime.datetime, conn) -> pd.DataFrame:  # возвраща
     odpu['q2forhour'] = odpu['Расход тепловой энергии'].astype(float) / (odpu['Наработка часов счётчика'])
 
     return odpu
+
 
 
 def get_odpu_one(unom: int, date: datetime.datetime, conn):
@@ -714,20 +829,6 @@ def collect_events(row, events):
     return row[feature2events]
 
 
-num2month = {
-    10: "october",
-    11: "november",
-    12: "december",
-    1: "january",
-    2: "february",
-    3: "march",
-    4: "april",
-    5: "may",
-    6: "june",
-    7: "july",
-    8: "august",
-    9: "september"
-}
 
 
 def collect_weather(row, weather):
