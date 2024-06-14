@@ -19,6 +19,7 @@ type CtpGeoData struct {
 type ResultGeoData struct {
 	Buildings []BuildingWithMetaGeoData `json:"buildings"`
 	Ctps      []CtpWithMetaGeoData      `json:"ctps"`
+	Tecs      []Tec                     `json:"tecs"`
 }
 
 type GeoDataFilter struct {

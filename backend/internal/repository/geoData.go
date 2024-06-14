@@ -146,8 +146,9 @@ var industrial = []string{
 
 func (g geoDataRepo) GetByFiltersWithBuildings(ctx context.Context, filters models.GeoDataFilter) (map[string]map[string]models.ResultGeoData, error) {
 	psql := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
-	queryBuilder := psql.Select("b.area", "b.unom", "to_json(b.geo_data)", "c.ctp_id", "c.source", "to_json(c.center)").
-		From("buildings b").LeftJoin("ctps c on b.ctp = c.ctp_id")
+	queryBuilder := psql.Select("b.area", "b.unom", "to_json(b.geo_data)", "c.ctp_id", "c.source",
+		"to_json(c.center)", "t.name", "t.address", "t.phone_number", "to_json(t.coordinates)").
+		From("buildings b").LeftJoin("ctps c on b.ctp = c.ctp_id").LeftJoin("tecs t on c.source = t.name")
 
 	switch filters.HeatNetwork {
 	case 1:
@@ -200,10 +201,13 @@ func (g geoDataRepo) GetByFiltersWithBuildings(ctx context.Context, filters mode
 	for rows.Next() {
 		var buildingGeo models.BuildingWithMetaGeoData
 		var ctpGeo models.CtpWithMetaGeoData
+		var tec models.Tec
 		var coordinatesJSON []byte
 		var centerJSON []byte
+		var tecCoordinatesJSON []byte
 
-		err = rows.Scan(&buildingGeo.Area, &buildingGeo.Unom, &coordinatesJSON, &ctpGeo.CtpID, &ctpGeo.Source, &centerJSON)
+		err = rows.Scan(&buildingGeo.Area, &buildingGeo.Unom, &coordinatesJSON, &ctpGeo.CtpID, &ctpGeo.Source, &centerJSON,
+			&tec.Name, &tec.Address, &tec.PhoneNumber, &tecCoordinatesJSON)
 		if err != nil {
 			return nil, err
 		}
@@ -236,6 +240,11 @@ func (g geoDataRepo) GetByFiltersWithBuildings(ctx context.Context, filters mode
 			}
 		}
 
+		err = json.Unmarshal(tecCoordinatesJSON, &tec.Coordinates)
+		if err != nil {
+			return nil, err
+		}
+
 		if filters.Date != "" {
 			buildingGeo.Probabilites, err = g.mlPredict.GetByUNOMAndDate(ctx, buildingGeo.Unom, filters.Date)
 			if err != nil {
@@ -263,11 +272,13 @@ func (g geoDataRepo) GetByFiltersWithBuildings(ctx context.Context, filters mode
 			res[outerKey][innerKey] = models.ResultGeoData{
 				Buildings: []models.BuildingWithMetaGeoData{buildingGeo},
 				Ctps:      []models.CtpWithMetaGeoData{},
+				Tecs:      []models.Tec{},
 			}
 			if ctpGeo.CtpID.Valid {
 				if _, ok := ctpIDs[ctpGeo.CtpID.String]; !ok {
 					elem := res[outerKey][innerKey]
 					elem.Ctps = append(elem.Ctps, ctpGeo)
+					elem.Tecs = append(elem.Tecs, tec)
 					res[outerKey][innerKey] = elem
 					ctpIDs[ctpGeo.CtpID.String] = struct{}{}
 				}
@@ -280,6 +291,7 @@ func (g geoDataRepo) GetByFiltersWithBuildings(ctx context.Context, filters mode
 				if _, ok := ctpIDs[ctpGeo.CtpID.String]; !ok {
 					elem := res[outerKey][innerKey]
 					elem.Ctps = append(elem.Ctps, ctpGeo)
+					elem.Tecs = append(elem.Tecs, tec)
 					res[outerKey][innerKey] = elem
 					ctpIDs[ctpGeo.CtpID.String] = struct{}{}
 				}
