@@ -120,6 +120,9 @@ func (m mlPredict) SavePredictsFromDate(ctx context.Context, startDate string) e
 			}
 
 			err = m.SaveProbsByUnomAndDate(ctx, unom, formattedTime, val)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
