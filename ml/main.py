@@ -1,6 +1,7 @@
 import pandas as pd
 import datetime
 import json
+import requests
 
 from catboost import CatBoostClassifier
 import numpy as np
@@ -9,6 +10,8 @@ import psycopg2
 from fastapi import FastAPI, HTTPException
 import uvicorn
 import warnings
+
+from typing import List
 
 import os
 
@@ -838,6 +841,433 @@ def add_cyclic_features(df, col, max_val):
     df[col + '_sin'] = np.sin(2 * np.pi * df[col] / max_val)
     df[col + '_cos'] = np.cos(2 * np.pi * df[col] / max_val)
     return df
+
+class CatBoostModel:
+    def __init__(self, data, type_description_dict, material_parameters_dict, model_path='catboost.cbm'):
+        """
+        Инициализация класса CatBoostModel.
+
+        Args:
+            data (pd.DataFrame): Исходные данные.
+            type_description_dict (dict): Словарь с описанием типов материалов.
+            material_parameters_dict (dict): Словарь с параметрами материалов.
+            model_path (str): Путь к сохраненной модели CatBoost.
+        """
+        self.data = data
+        self.type_description_dict = type_description_dict
+        self.material_parameters_dict = material_parameters_dict
+        self.model_path = model_path
+        self.model = CatBoostRegressor().load_model(self.model_path)
+
+    def get_data_by_unum(self, unom) -> dict:
+        """
+        Получение данных для данного 'unom' из соответствующих словарей.
+
+        Args:
+            unom (float): 'unom' дома.
+            conn - соединение с базой данных
+
+        Returns:
+            dict: Словарь с данными для указанного 'unom'.
+        """
+        try:
+            # Подключение к базе данных
+            conn = connect_to_db()
+            selected_columns = ["total_area", "number_of_floors", "wall_materials"]
+            query = f"""
+            SELECT {', '.join(selected_columns)}
+            FROM buildings
+            WHERE unom = %s;
+            """
+            cursor = conn.cursor()
+            cursor.execute(query, (unom,))
+            result = cursor.fetchone()
+            if result:
+                # Получаем названия столбцов из описания курсора
+                column_names = [desc[0] for desc in cursor.description]
+
+                # Создаем словарь для хранения данных
+                data_dict = {}
+                for i, name in enumerate(column_names):
+                    data_dict[name] = result[i]
+
+                # Проверяем наличие nan или None в словаре
+                # has_nan_or_none = any(value is None or value == '' or value=='nan' for value in data_dict.values())
+
+                # if has_nan_or_none:
+                #     print("В данных присутствуют значения nan или None")
+                #     print(None)
+
+                new_dict = {}
+                new_keys = ["Общая площадь", "Количество этажей", "Материалы стен"]
+                for old_key, new_key in zip(data_dict.keys(), new_keys):
+                    new_dict[new_key] = data_dict[old_key]
+
+                temp_data = new_dict
+                # print(temp_data)
+
+                S = temp_data['Общая площадь']
+                if str(S) == 'nan': S = 6500
+                if not S: S = 6500
+
+                # print("Общая площадь",S)
+                N = temp_data['Количество этажей']
+                if not N: N = 9
+                if str(N) == 'nan': N = 9
+
+
+                # print("Количество этажей", N)
+                d = 0.3
+                material = self.type_description_dict.get(temp_data['Материалы стен'], 'Железобетон')
+                L, c1, ro1 = self.material_parameters_dict[material]
+
+                return {
+                    'S': S,
+                    'N': N,
+                    'd': d,
+                    'L': L,
+                    'c1': c1,
+                    'ro1': ro1
+                }
+            else:
+                print("Ошибка в данных")
+                return {'S': 1426.6,
+                        'N': 4.0,
+                        'd': 0.3,
+                        'L': 0.67,
+                        'c1': 840,
+                        'ro1': 1750
+                        }
+
+        except Exception as e:
+                print(f"2Ошибка при подключении к базе данных: {e}")
+                return None
+
+
+    def prepare_one_data_sample(self, unom, t_in, t_outside):
+        """
+        Подготаливает данные для одного образца для модели на основе входных параметров.
+
+        Args:
+            unom (float): 'unom' дома.
+            t_in (float): Текущая температура внутри для данного 'unom'.
+            t_outside (dict): Словарь с температурами через 5, 10, ..., 30 часов.
+
+        Returns:
+            dict: Словарь с подготовленными данными для модели.
+        """
+        unom_dict = self.get_data_by_unum(unom)
+
+        h = 3  # Средняя высота одного этажа
+        # print(unom_dict)
+        P = 4 * math.sqrt(unom_dict['S'] / unom_dict['N'])  # Расчет периметра
+        V = unom_dict['S'] * h  # Расчет объема
+        alpha = unom_dict['L'] / unom_dict['d']  # Расчет коэффициента альфа
+        A = P * unom_dict['N'] * h  # Расчет параметра A
+
+        return {
+            'unom': unom,
+            't_inside': t_in,
+            'c1': unom_dict['c1'],
+            'ro1': unom_dict['ro1'],
+            'V': V,
+            'alpha': alpha,
+            'A': A,
+            't_in_5_hours': t_outside['t_in_5_hours'],
+            't_in_10_hours': t_outside['t_in_10_hours'],
+            't_in_15_hours': t_outside['t_in_15_hours'],
+            't_in_20_hours': t_outside['t_in_20_hours'],
+            't_in_25_hours': t_outside['t_in_25_hours'],
+            't_in_30_hours': t_outside['t_in_30_hours'],
+        }
+
+    def prepare_data_for_catboost(self, unoms, t_inside, t_outside):
+        """
+        Готовит данные для модели CatBoost на основе входных данных.
+
+        Args:
+            unoms (list): Список значений 'unom' для которых производится расчет.
+            t_inside (list): Список текущих температур для каждого 'unom'.
+            t_outside (dict): Словарь, где ключи - 't_in_5_hours', 't_in_10_hours', ..., 't_in_30_hours',
+                              а значения - соответствующие температуры через 5, 10, ..., 30 часов.
+
+        Returns:
+            pd.DataFrame: DataFrame, содержащий данные, подготовленные для модели CatBoost.
+        """
+        data_for_catboost = [self.prepare_one_data_sample(unom, t_in, t_outside) for unom, t_in in zip(unoms, t_inside)]
+        return pd.DataFrame(data_for_catboost)
+
+    def get_catboost_predictions(self, data_for_catboost):
+        """
+        Получает прогнозы с использованием модели CatBoost и возвращает их в виде словаря.
+
+        Args:
+            data_for_catboost (pd.DataFrame): Входные данные для модели CatBoost.
+
+        Returns:
+            dict: Словарь, {unom: hours_until_cooling}, где hours_until_cooling - часы до остывания дома.
+        """
+        data_for_catboost['hours_until_cooling'] = self.model.predict(data_for_catboost).astype('int64')
+        return data_for_catboost.set_index('unom')['hours_until_cooling'].to_dict()
+
+    def complex_custom_ranking(self, unom, hours):
+        """
+        Рассчитывает комплексный приоритет для здания на основе различных параметров.
+
+        Аргументы:
+            unom (int): Уникальный идентификатор здания.
+            hours (int): Количество часов до остывания здания.
+
+        Возвращает:
+            int: Рассчитанный приоритет здания, где 1 - наивысший приоритет.
+
+        Описание:
+            Метод рассчитывает приоритет здания на основе следующих параметров:
+            - Категория здания (жилое, социальное, промышленное)
+            - Класс энергоэффективности здания
+            - Режим работы здания
+
+            Приоритет рассчитывается с учетом веса этих параметров и нормализуется в диапазоне, где 1 означает наивысший приоритет.
+        """
+
+        try:
+            # Подключение к базе данных
+            conn = connect_to_db()
+            selected_columns = ["work_hours", "energy_efficiency_class", "purpose"]
+            query = f"""
+            SELECT {', '.join(selected_columns)}
+            FROM buildings
+            WHERE unom = %s;
+            """
+            cursor = conn.cursor()
+            cursor.execute(query, (int(unom),))
+            print("bruh")
+            result = cursor.fetchone()
+            if result:
+                # Получаем названия столбцов из описания курсора
+                column_names = [desc[0] for desc in cursor.description]
+
+                # Создаем словарь для хранения данных
+                data_dict = {}
+                for i, name in enumerate(column_names):
+                    data_dict[name] = result[i]
+
+                # Проверяем наличие nan или None в словаре
+                # has_nan_or_none = any(value is None or value == '' or value=='nan' for value in data_dict.values())
+
+                # if has_nan_or_none:
+                #     print("В данных присутствуют значения nan или None")
+                #     print(None)
+
+                new_dict = {}
+                new_keys = ["Режим работы", "Класс энергоэффективности здания", "Назначение"]
+                for old_key, new_key in zip(data_dict.keys(), new_keys):
+                    new_dict[new_key] = data_dict[old_key]
+
+                apartment_tags = ['многоквартирный дом', 'блокированный жилой дом', 'общежитие', 'спальный корпус', 'гараж', 'дом ребенка', 'интернат', 'гостиница']
+                social_tags = ['школа', 'библиотека', 'музей', 'детский сад', 'колледж', 'больница', 'родильный дом', 'поликлиника', 'ясли-сад', 'медучилище', 'дом детского творчества', 'музыкальная школа', 'школа-интернат', 'гимназия', 'лечебный корпус', 'санаторий', 'центр реабилитации', 'спецшкола', 'училище', 'лечебное', 'учебное', 'учебно-производственный комбинат', 'культурно-просветительное', 'техническое училище', 'техникум', 'школа-сад', 'детские ясли', 'станция скорой помощи', 'спортивная школа', 'наркологический диспансер', 'профтехучилище', 'спортивный клуб', 'лаборатория', 'детский санаторий', 'диспансер', 'дворец пионеров', 'детсад-ясли', 'детский дом культуры', 'ясли', 'физкультурно-оздоровительный комплекс', 'клуб', 'бассейн и спортзал', 'спортивный корпус', 'детское дошкольное учреждение', 'подстанция скорой помощи', 'блок-пристройка начальных классов', 'спортивное', 'кафе', 'столовая', 'центр обслуживания']
+                industrial_tags = ['трансформаторная подстанция', 'нежилое', 'выставочный павильон', 'кухня клиническая', 'хозблок', 'овощехранилище', 'учреждение', 'хирургический корпус', 'морг', 'пищеблок', 'учебно-воспитателный комбинат', 'учреждение,мастерские', 'дезинфекционная камера', 'отделение судебно-медицинской экспертизы', 'пункт охраны', 'учебный корпус', 'плавательный бассейн', 'хранилище', 'административное', 'научное', 'архив', 'учебно-воспитательное', 'терапевтический корпус', 'учебное', 'административно-бытовой']
+
+                energy_efficiency = new_dict['Класс энергоэффективности здания']
+                energy_efficiency_mapping = {'A++': 2, 'A+': 3, 'A': 4, 'B': 5, 'C': 6, 'D': 7, 'E': 8, 'F': 9, 'G': 10}  # Словарь для сопоставления уровня энергоэффективности с числовым значением
+                efficiency_weight = energy_efficiency_mapping.get(energy_efficiency, 1)  # По умолчанию, если энергоэффективность неизвестна или некорректна
+
+                # Определение весов категорий
+                purpose_weight = new_dict.get(new_dict['Назначение'], "многоквартирный дом")
+                if purpose_weight in social_tags:
+                    weight = 3
+                elif purpose_weight in industrial_tags:
+                    weight = 2
+                else:
+                    weight = 1
+
+                # Определение весов режима работы
+
+                working_time = new_dict['Режим работы']
+                working_time_mapping = {'Круглосуточно': 3, '9:00 - 21:00': 2, '9:00 – 18:00': 1}  # Словарь для сопоставления уровня энергоэффективности с числовым значением
+                working_weight = working_time_mapping.get(working_time, 1)  # По умолчанию, если энергоэффективность неизвестна или некорректна
+
+                if hours <= 2:
+                    # приоритет максимальный (1)
+                    return 1
+                else:
+                    # Формула для расчета приоритета
+                    return 4 - ((weight + efficiency_weight + working_weight) / hours)
+            else:
+                return None
+
+        except Exception as e:
+                print(f"3Ошибка при подключении к базе данных: {e}")
+                return None
+
+
+
+    def get_final_ranking(self, data_from_request):
+        """
+        Рассчитывает окончательный рейтинг зданий на основе данных о часах до остывания.
+
+        Аргументы:
+            data_from_request (dict): Словарь, где ключи - 'unom' зданий,
+                                      а значения - часы до остывания здания.
+
+        Возвращает:
+            pd.DataFrame: DataFrame, содержащий отсортированные данные по приоритету,
+                          включающий столбцы 'unom', 'hours' и 'Rank'.
+                          Значения в столбце 'Rank' нормализованы в диапазоне от 1 до 3,
+                          где 1 - максимальный приоритет.
+
+        Пример:
+            >>> data_from_request = {
+            ...     101: 5,
+            ...     102: 2,
+            ...     103: 8,
+            ... }
+            >>> model = CatBoostModel(data, type_description_dict, material_parameters_dict, model_path)
+            >>> df_ranking = model.get_final_ranking(data_from_request)
+            >>> print(df_ranking)
+               unom  hours  Rank
+            0   102      2     1
+            1   101      5     2
+            2   103      8     3
+        """
+
+        df = pd.DataFrame.from_dict(data_from_request, orient='index').reset_index()
+        df.columns = ['unom', 'hours']
+
+        # Применение функции расчета приоритета к каждому объекту
+        df['Rank'] = df.apply(lambda row: self.complex_custom_ranking(row['unom'], row['hours']), axis=1)
+
+        # Нормализация приоритета к диапазону от 1 до 3
+        df['Rank'] = df['Rank'].apply(lambda x: max(1, min(3, round(x))))
+
+        # Сортировка по приоритету
+        df_sorted = df.sort_values(by='Rank', ascending=True)
+
+        return df_sorted
+
+def get_current_temperature():
+    """
+    Функция для получения прогноза погоды от Яндекс.Погоды по координатам.
+    :param lat: Широта
+    :param lon: Долгота
+    :return: Прогноз погоды
+    """
+    url = f'https://api.weather.yandex.ru/v2/forecast?lat=55.787715&lon=37.775631'
+    headers = {'X-Yandex-Weather-Key': "83f2c69f-542f-4a2a-b1dc-b32b2d01e7ac"}
+
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+        return response.json()["fact"]["temp"]
+    else:
+        print(f"Ошибка при запросе: {response.status_code}")
+        return None
+
+
+def get_future_temperature():
+    """
+    Функция для получения прогноза погоды от Яндекс.Погоды по координатам.
+    :param lat: Широта
+    :param lon: Долгота
+    :return: Прогноз погоды
+    """
+    # Получаем текущую дату и время
+    now = int(get_current_temperature())
+
+    url = f'https://api.weather.yandex.ru/v2/forecast?lat=55.787715&lon=37.775631'
+    headers = {'X-Yandex-Weather-Key': "83f2c69f-542f-4a2a-b1dc-b32b2d01e7ac"}
+
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+        return {
+            't_in_5_hours': now,
+            't_in_10_hours': now,
+            't_in_15_hours': now,
+            't_in_20_hours': now,
+            't_in_25_hours': now,
+            't_in_30_hours': now
+        }
+    else:
+        print(f"Ошибка при запросе: {response.status_code}")
+        return None
+
+
+def connect_to_db():
+    try:
+        conn = psycopg2.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD
+        )
+        print("Подключение к базе данных успешно установлено")
+        return conn
+    except Exception as e:
+        print(f"1Ошибка при подключении к базе данных: {e}")
+        return None
+
+
+def read_data_from_db(conn):
+    query = "SELECT * FROM buildings;"  # Замените 'buildings' на название вашей таблицы
+    try:
+        df = pd.read_sql_query(query, conn)
+        return df
+    except Exception as e:
+        print(f"Ошибка при выполнении запроса: {e}")
+        return None
+
+@app.post("/calc_cooldown/")
+async def calc_cooldown(unoms: List[int]):
+        """
+        Ручка для получение ранжированного списка остывающих объектов
+
+        Аргументы:
+            unoms (list): Массив УНОМов
+
+        Возвращает:
+            dict: словарь, содержащий отсортированные данные по приоритету,
+                          включающий столбцы 'unom', 'hours' и 'Rank'.
+                          Значения в столбце 'Rank' нормализованы в диапазоне от 1 до 3,
+                          где 1 - максимальный приоритет.
+        """
+        unoms = [int(unom) for unom in unoms]
+        conn = connect_to_db()
+        if not conn:
+            raise HTTPException(status_code=500, detail="Не удалось подключиться к базе данных")
+
+        try:
+            # Считываем данные в DataFrame
+            database = read_data_from_db(conn)
+
+            if database is None:
+                raise HTTPException(status_code=500, detail="Ошибка при считывании данных из базы данных")
+
+            t_inside = [get_current_temperature()] * len(unoms)
+            t_outside = get_future_temperature()
+
+            # Получаем предсказания
+            catboost_model = CatBoostModel(database, type_description_dict, material_parameters_dict, model_path='catboost.cbm')
+            data_for_catboost = catboost_model.prepare_data_for_catboost(unoms, t_inside, t_outside)
+            catboost_predictions = catboost_model.get_catboost_predictions(data_for_catboost)
+            df_sorted = catboost_model.get_final_ranking(catboost_predictions)
+
+            return df_sorted.to_dict(orient='records')
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            conn.close()
+
+
+type_description_file_path = "type_descriptions.json"
+material_parameters_file_path = "material_parameters.json"
+
+with open(type_description_file_path, 'r', encoding='utf-8') as file:
+    type_description_dict = json.load(file)
+
+with open(material_parameters_file_path, 'r', encoding='utf-8') as file:
+    material_parameters_dict = json.load(file)
 
 
 if __name__ == "__main__":
