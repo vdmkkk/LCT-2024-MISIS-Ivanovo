@@ -188,7 +188,8 @@ func (i incidentRepo) GetByID(ctx context.Context, id int) (models.Incident, err
 }
 
 func (i incidentRepo) GetAllByUNOM(ctx context.Context, unom int) ([]models.Incident, error) {
-	query := `SELECT incident_id FROM incidents_handled_unoms WHERE handled_unom = $1`
+	query := `SELECT ihu.incident_id FROM handled_unoms LEFT JOIN incidents_handled_unoms ihu on handled_unoms.id = ihu.handled_unom
+    WHERE unom = $1`
 
 	rows, err := i.db.QueryContext(ctx, query, unom)
 	if err != nil {
