@@ -77,7 +77,7 @@ func mlProcessing(unomsToProcess []int) ([]models.HandledUnom, error) {
 	if resp.StatusCode != http.StatusOK {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return nil, fmt.Errorf("error reading response body", err)
+			return nil, fmt.Errorf("error reading response body %v", err)
 		}
 
 		return nil, fmt.Errorf("error: received non-200 from ML response status: %v, body: %v", resp.Status, string(body))

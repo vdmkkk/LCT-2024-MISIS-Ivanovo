@@ -8,8 +8,8 @@ type IncidentShowUp struct {
 
 type HandledUnom struct {
 	Unom          int `json:"unom"`
-	HoursToCool   int `json:"hours_to_cool"`
-	PriorityGroup int `json:"priority_group"`
+	HoursToCool   int `json:"hours"`
+	PriorityGroup int `json:"Rank"`
 }
 
 type IncidentBase struct {

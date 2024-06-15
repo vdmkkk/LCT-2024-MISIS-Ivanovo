@@ -77,8 +77,6 @@ async def upload_file_11(file: UploadFile = File(...)):
 
     file_name = 'output_11.csv'
 
-    # df.to_csv(file_name, index=False, sep=',', encoding='utf-8')
-
     df = df.rename(columns={
         'ID УУ': 'id_uu',  # 'ID УУ': 'id_uu',
         'ID ТУ': 'id_tu',
@@ -142,8 +140,6 @@ async def upload_file_5(sheet_name: str, file: UploadFile = File(...)):
     df = pd.read_excel(BytesIO(contents), sheet_name=sheet_name)
 
     file_name = 'output_5.csv'
-
-    # df.to_csv(file_name, index=False, sep=',', encoding='utf-8')
 
     df = df.rename(columns={
         'Наименование': 'name',
