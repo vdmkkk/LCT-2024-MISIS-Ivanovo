@@ -11,6 +11,9 @@ from psycopg2 import sql
 import openpyxl
 import os
 
+# TODO: сделать чтобы писало какой не хватает колонки
+# TODO: сделать считывание cred'ov из env
+
 app = FastAPI()
 
 app.add_middleware(
@@ -64,18 +67,17 @@ def load_csv_to_db(file_path: str, table_name: str):
             conn.close()
 
 
-# pip install openpyxl
-@app.post("/upload_file")
-async def create_upload_file(file: UploadFile = File(...)):
+@app.post("/upload_file/11")
+async def upload_file_11(file: UploadFile = File(...)):
     if file.content_type != 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
         return {"error": "Invalid file type. Please upload an XLSX file."}
 
     contents = await file.read()
     df = pd.read_excel(BytesIO(contents))
 
-    file_name = 'output.csv'
+    file_name = 'output_11.csv'
 
-    df.to_csv(file_name, index=False, sep=',', encoding='utf-8')
+    # df.to_csv(file_name, index=False, sep=',', encoding='utf-8')
 
     df = df.rename(columns={
         'ID УУ': 'id_uu',  # 'ID УУ': 'id_uu',
@@ -122,6 +124,67 @@ async def create_upload_file(file: UploadFile = File(...)):
     df.to_csv(file_name, index=False, sep=',', encoding='utf-8')
 
     load_csv_to_db(file_name, 'heating_data')
+
+    try:
+        os.remove(file_name)
+    except OSError as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting file: {e}")
+
+    return {"filename": file.filename}
+
+
+@app.post("/upload_file/5/{sheet_name}")
+async def upload_file_5(sheet_name: str, file: UploadFile = File(...)):
+    if file.content_type != 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+        return {"error": "Invalid file type. Please upload an XLSX file."}
+
+    contents = await file.read()
+    df = pd.read_excel(BytesIO(contents), sheet_name=sheet_name)
+
+    file_name = 'output_5.csv'
+
+    # df.to_csv(file_name, index=False, sep=',', encoding='utf-8')
+
+    df = df.rename(columns={
+        'Наименование': 'name',
+        'Источник': 'source',
+        'Дата создания во внешней системе': 'creation_date',
+        'Дата закрытия': 'closure_date',
+        'Округ': 'district',
+        'УНОМ': 'unom',
+        'Адрес': 'address',
+        'Дата и время завершения события во внешней системе': 'event_completion_date'
+    })
+
+    correct_order = [
+        'name', 'source', 'creation_date', 'closure_date', 'district', 'unom', 'address', 'event_completion_date'
+    ]
+
+    missing_columns = set(correct_order) - set(df.columns)
+    if missing_columns:
+        df = df.rename(columns={
+            'Дата и время завершения события': 'event_completion_date'
+        })
+        missing_columns = set(correct_order) - set(df.columns)
+        if missing_columns:
+            raise HTTPException(status_code=400, detail=f"Отсутствуют столбцы: {missing_columns}")
+
+    df = df[correct_order]
+
+    filter_values = [
+        'P1 <= 0', 'P2 <= 0', 'T1 < min', 'T1 > max', 'Аварийная протечка труб в подъезде',
+        'Крупные пожары', 'Отсутствие отопления в доме', 'Протечка труб в подъезде',
+        'Сильная течь в системе отопления', 'Температура в квартире ниже нормативной',
+        'Температура в помещении общего пользования ниже нормативной', 'Течь в системе отопления'
+    ]
+
+    df = df[df['name'].isin(filter_values)]
+
+    df['unom'] = df['unom'].apply(lambda x: int(str(x).replace('.0', '')))
+
+    df.to_csv(file_name, index=False, sep=',', encoding='utf-8')
+
+    load_csv_to_db(file_name, 'events')
 
     try:
         os.remove(file_name)
