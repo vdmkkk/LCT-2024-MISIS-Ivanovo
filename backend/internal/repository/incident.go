@@ -100,7 +100,7 @@ func (i incidentRepo) Create(ctx context.Context, processedIncident models.Incid
 }
 
 func (i incidentRepo) GetAll(ctx context.Context) ([]models.IncidentShowUp, error) {
-	query := `SELECT id, to_json(coordinates) FROM incidents`
+	query := `SELECT id, to_json(coordinates), ctp_id FROM incidents`
 
 	rows, err := i.db.QueryContext(ctx, query)
 	if err != nil {
@@ -112,7 +112,7 @@ func (i incidentRepo) GetAll(ctx context.Context) ([]models.IncidentShowUp, erro
 		var incident models.IncidentShowUp
 		var coordinatesJSON []byte
 
-		err = rows.Scan(&incident.ID, &coordinatesJSON)
+		err = rows.Scan(&incident.ID, &coordinatesJSON, &incident.CtpID)
 		if err != nil {
 			return nil, err
 		}
