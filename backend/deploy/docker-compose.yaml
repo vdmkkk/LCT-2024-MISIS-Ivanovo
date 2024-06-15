@@ -32,6 +32,21 @@ services:
       postgres-database:
         condition: service_healthy
 
+  storage-app:
+    build:
+      context: ../../
+      dockerfile: storage/Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: "postgres-database"
+    depends_on:
+      postgres-database:
+        condition: service_healthy
+
   postgres-database:
     image: postgres:latest
     env_file:
