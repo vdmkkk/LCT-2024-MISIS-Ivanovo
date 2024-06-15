@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/spf13/viper"
+	"io/ioutil"
 	"lct/internal/models"
 	"lct/internal/repository"
 	"lct/pkg/config"
@@ -51,16 +52,16 @@ func imitateMLProcessing(input []int) []models.HandledUnom {
 func mlProcessing(unomsToProcess []int) ([]models.HandledUnom, error) {
 	res := make([]models.HandledUnom, 0, len(unomsToProcess))
 
-	url := fmt.Sprintf("http://%v:8000/ccalc_cooldown/", viper.GetString(config.MlAppHost))
+	url := fmt.Sprintf("http://%v:8000/calc_cooldown/", viper.GetString(config.MlAppHost))
 
-	jsonData, err := json.Marshal(res)
+	jsonData, err := json.Marshal(unomsToProcess)
 	if err != nil {
-		return nil, fmt.Errorf("error marshalling data:", err)
+		return nil, fmt.Errorf("error marshalling data: %v", err)
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return nil, fmt.Errorf("error creating request:", err)
+		return nil, fmt.Errorf("error creating request: %v", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -69,17 +70,22 @@ func mlProcessing(unomsToProcess []int) ([]models.HandledUnom, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error making request:", err)
+		return nil, fmt.Errorf("error making request: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("error: received non-200 response status:", resp.Status)
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("error reading response body", err)
+		}
+
+		return nil, fmt.Errorf("error: received non-200 from ML response status: %v, body: %v", resp.Status, string(body))
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding response:", err)
+		return nil, fmt.Errorf("error decoding response: %v", err)
 	}
 
 	return res, nil
