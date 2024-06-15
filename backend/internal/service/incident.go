@@ -117,10 +117,12 @@ func (i incidentServ) Create(ctx context.Context, createIncident models.Incident
 			unomsToProcess = append(unomsToProcess, v.Unom)
 		}
 
-		incident.HandledUnoms, err = mlProcessing(unomsToProcess)
-		if err != nil {
-			i.logs.Error(err.Error())
-			return 0, err
+		if len(unomsToProcess) != 0 {
+			incident.HandledUnoms, err = mlProcessing(unomsToProcess)
+			if err != nil {
+				i.logs.Error(err.Error())
+				return 0, err
+			}
 		}
 	} else {
 		building, err := i.buildingRepo.GetByUNOM(ctx, createIncident.Unom)
