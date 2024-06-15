@@ -35,6 +35,11 @@ const showDialog = ref(false);
 const incidentData = ref<IncidentType>();
 const incident = ref<number>();
 
+// payload //
+const description = ref<string>();
+const date_start = ref<Date>();
+const date_end = ref<Date>();
+
 watch(props, setOpen);
 watch(showDialog, setClose);
 

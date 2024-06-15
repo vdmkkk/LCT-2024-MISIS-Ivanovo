@@ -15,6 +15,7 @@ import { GeoType1, GeoType2, GeoType3 } from 'src/types/GeoType';
 import CreateArea from 'src/composables/createArea';
 import Highcharts from 'highcharts';
 import IncidentDialog from 'src/dialogs/IncidentDialog.vue';
+import OpenIncidentDialog from './components/OpenIncidentsDialog.vue';
 
 const $q = useQuasar();
 const colors = Highcharts.getOptions().colors;
@@ -274,7 +275,6 @@ const handleMarkersIncident = (incidents: any) => {
         currIncident.value = currMarker.value === i.toString() ? null : id;
         currMarker.value =
           currMarker.value === i.toString() ? null : i.toString();
-        showIncidentDialog.value = true;
         console.log(currIncident.value);
       });
 
@@ -328,13 +328,14 @@ const loadData = async () => {
 
   clearMarkers();
 
-  switch (true) {
-    case optionsStore.mapMode == 'monitoring':
-      await getDataMonitoring();
-    case optionsStore.mapMode == 'incident':
-      await getDataIncident();
-    case optionsStore.mapMode == 'predict':
-      await getDataPredict();
+  if (optionsStore.mapMode === 'monitoring') {
+    await getDataMonitoring();
+  }
+  if (optionsStore.mapMode === 'incident') {
+    await getDataIncident();
+  }
+  if (optionsStore.mapMode === 'predict') {
+    await getDataPredict();
   }
 };
 
@@ -377,12 +378,14 @@ onMounted(() => {
     bindMap();
   }
 });
-
-watch(showIncidentDialog, clickMap);
 </script>
 
 <template>
   <div class="map-container" id="container" />
+  <OpenIncidentDialog
+    :incident-id="currIncident!"
+    v-model="showIncidentDialog"
+  />
   <IncidentDialog v-model="showIncidentDialog" :incident-id="currIncident!" />
   <RighPanel :place-id="currPolygon!" />
   <LeftPanel />

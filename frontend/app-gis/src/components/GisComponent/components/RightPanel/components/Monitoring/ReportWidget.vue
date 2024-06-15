@@ -40,11 +40,12 @@ const list = {
 
 const data = ref();
 onMounted(() => {
-  // @ts-ignore //
-  getDynamicDataForUnom(props.object['unom']).then((res) => {
-    console.log(res);
-    data.value = res['odpu_plot'];
-  });
+  if (props.object?.['unom'])
+    // @ts-ignore //
+    getDynamicDataForUnom(props.object['unom']).then((res) => {
+      console.log(res);
+      data.value = res['odpu_plot'];
+    });
 });
 </script>
 
@@ -52,28 +53,34 @@ onMounted(() => {
   <div v-if="data" class="report-container">
     <h1>Сводка</h1>
     <div v-for="[key, data] in Object.entries(data)" :key="key">
-      {{
-        console.log(
-          Object.entries(data).toSorted((a, b) => {
-            const dateA = new Date(a[0].split('.').reverse().join('-'));
-            const dateB = new Date(b[0].split('.').reverse().join('-'));
-            return dateB - dateA;
-          })
-        )
-      }}
-      <i class="material-icons">{{ list[key].logo }}</i>
-      <h2>{{ list[key].title }}</h2>
-      :
-      <h3>
-        {{
-          Object.entries(data).toSorted((a, b) => {
-            const dateA = new Date(a[0].split('.').reverse().join('-'));
-            const dateB = new Date(b[0].split('.').reverse().join('-'));
-            return dateB - dateA;
-          })[0][1]
-        }}
-      </h3>
+      <div>
+        <div style="display: flex; align-items: baseline">
+          <div style="width: 15%">
+            <i class="material-symbols-outlined">{{ list[key].logo }}</i>
+          </div>
+          <div style="width: 55%">
+            <div style="display: flex; align-items: baseline">
+              <h2 style="width: 95%">{{ list[key].title }}:</h2>
+            </div>
+          </div>
+          <div style="width: 30%">
+            <h3>
+              {{
+                Object.entries(data).toSorted((a, b) => {
+                  const dateA = new Date(a[0].split('.').reverse().join('-'));
+                  const dateB = new Date(b[0].split('.').reverse().join('-'));
+                  return dateB - dateA;
+                })[0][1]
+              }}
+            </h3>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
+  <div class="report-container" v-else>
+    <h1>Сводка</h1>
+    <h2>Данных нет</h2>
   </div>
 </template>
 
@@ -89,10 +96,15 @@ onMounted(() => {
 
   h2 {
     font-size: 1.4em;
+    line-height: 1.4em;
   }
 
   h3 {
     font-size: 1.3em;
+  }
+
+  .material-symbols-outlined {
+    font-size: 32px;
   }
 }
 </style>

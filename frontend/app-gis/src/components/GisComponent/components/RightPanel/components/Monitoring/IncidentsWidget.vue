@@ -11,10 +11,12 @@ const props = defineProps<{
 const data = ref();
 onMounted(() => {
   // @ts-ignore //
-  getIncidentsByUnom(props.object['unom']).then((res) => {
-    console.log(res);
-    data.value = res;
-  });
+  if (props.object?.['unom'])
+    // @ts-ignore //
+    getIncidentsByUnom(props.object['unom']).then((res) => {
+      console.log(res);
+      data.value = res;
+    });
 });
 
 const getPriorityStyles = (priority_group: number) => {
@@ -30,6 +32,23 @@ const getPriorityStyles = (priority_group: number) => {
   }
 };
 
+const getStatus = (date_end: string | null) => {
+  if (date_end)
+    return {
+      backgroundColor: '#f00',
+      borderRadius: '50%',
+      width: '20px',
+      height: '20px',
+    };
+  else
+    return {
+      backgroundColor: '#0f0',
+      borderRadius: '50%',
+      width: '20px',
+      height: '20px',
+    };
+};
+
 const showDialog = ref(false);
 
 const handleOpenDialog = () => {
@@ -41,6 +60,7 @@ const handleOpenDialog = () => {
 <template>
   <div class="incidents-container">
     <h1>Аварии</h1>
+    <h2 v-if="!data">История инцидентов пуста</h2>
     <div
       class="incidents"
       v-for="{
@@ -53,18 +73,79 @@ const handleOpenDialog = () => {
       :key="id"
       @click="handleOpenDialog"
     >
-      <h2>ЦТП: {{ ctp_id }}</h2>
-      <p>ID: {{ id }}</p>
       <!-- TODO: ховер должен менять цвет чтобы было понятно что можно НАЖАТЬ -->
-      <!-- TODO: Обрезать эту хуиту до 8 знаков  -->
-      <p>Координаты: {{ coordinates[0] }} {{ coordinates[1] }}</p>
-      <h2>Затронутые объекты:</h2>
+      <div>
+        <div style="display: flex; align-items: center">
+          <div :style="getStatus(payload.date_end)" />
+          <h3 style="margin: 0">
+            Статус: {{ payload.date_end ? 'Неакивна' : 'Активна' }}
+          </h3>
+        </div>
+        <!-- TODO: если ЦТП нету, то не выводить это -->
+        <div style="display: flex">
+          <div style="width: 50%">
+            <h2 style="font-weight: 400">ЦТП:</h2>
+          </div>
+          <div style="width: 50%">
+            <h2>{{ ctp_id }}</h2>
+          </div>
+        </div>
+
+        <div style="display: flex">
+          <div style="width: 50%">
+            <h2 style="font-weight: 400">ID:</h2>
+          </div>
+          <div style="width: 50%">
+            <h2>{{ id }}</h2>
+          </div>
+        </div>
+
+        <div style="display: flex">
+          <div style="width: 50%">
+            <h2 style="font-weight: 400">Описание:</h2>
+          </div>
+          <div style="width: 50%">
+            <h2>{{ payload.description }}</h2>
+          </div>
+        </div>
+
+        <div style="display: flex">
+          <div style="width: 50%">
+            <h2 style="font-weight: 400">Дата регистрации:</h2>
+          </div>
+          <div style="width: 50%">
+            <!-- TODO: нужно тут обработать дату, привести к формату hh:mm dd:MM:yyyy -->
+            <h2>{{ payload.date_start }}</h2>
+          </div>
+        </div>
+
+        <div style="display: flex">
+          <div style="width: 50%">
+            <h2 style="font-weight: 400">Дата закрытия:</h2>
+          </div>
+          <div style="width: 50%">
+            <!-- TODO: добавь проверку что существует. В случае чего поставь "-" -->
+            <h2>{{ payload.date_end }}</h2>
+          </div>
+        </div>
+
+        <div style="display: flex">
+          <div style="width: 50%">
+            <h2 style="font-weight: 400">Координаты:</h2>
+          </div>
+          <!-- TODO: Обрезать эту хуиту до 8 знаков  -->
+          <div style="width: 50%">
+            <h2>{{ coordinates[0] }} {{ coordinates[1] }}</h2>
+          </div>
+        </div>
+      </div>
+      <h2 style="font-weight: 400">Затронутые объекты:</h2>
       <div
         class="handled-unoms"
         v-for="{
           unom: unom,
-          hours_to_cool: hours_to_cool,
-          priority_group: priority_group,
+          hours: hours_to_cool,
+          Rank: priority_group,
         } in handled_unoms"
         :key="unom"
         :style="getPriorityStyles(priority_group)"
@@ -73,7 +154,6 @@ const handleOpenDialog = () => {
         <p>Часов до остывания: {{ hours_to_cool }}</p>
         <p>Приоритет: {{ priority_group }}</p>
       </div>
-      <p style="margin-top: 30px">{{ payload }}</p>
       <IncidentDialog
         v-model="showDialog"
         :data="{
@@ -100,7 +180,8 @@ const handleOpenDialog = () => {
 
   h2 {
     font-size: 1.4em;
-    margin-top: 0px;
+    margin-top: 10px;
+    line-height: 40px;
   }
 
   .incidents {
@@ -111,8 +192,16 @@ const handleOpenDialog = () => {
 
     .handled-unoms {
       border-radius: 20px;
-      padding: 10px;
+      padding: 20px;
+      padding-bottom: 8px;
       margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+
+      p {
+        font-size: 16px;
+        line-height: 16px;
+      }
     }
   }
 }
