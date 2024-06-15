@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import LineChartAllEvents from './components/LineChartAllEvents.vue';
-import LineChartOnlyOk from './components/LineChartOnlyOk.vue';
+
 import getIncidentsByUnom from 'src/api/getIncidentsForUnom';
 import IncidentDialog from 'src/dialogs/IncidentDialog.vue';
 
@@ -32,11 +31,16 @@ const getPriorityStyles = (priority_group: number) => {
 };
 
 const showDialog = ref(false);
+
+const handleOpenDialog = () => {
+  console.log('bruh');
+  showDialog.value = true;
+};
 </script>
 
 <template>
   <div class="incidents-container">
-    <h1>Предсказания</h1>
+    <h1>Аварии</h1>
     <div
       class="incidents"
       v-for="{
@@ -47,8 +51,8 @@ const showDialog = ref(false);
         payload: payload,
       } in data"
       :key="id"
+      @click="handleOpenDialog"
     >
-      <q-btn label="Open Dialog" @click="showDialog = true" color="primary" />
       <h2>ЦТП: {{ ctp_id }}</h2>
       <p>ID: {{ id }}</p>
       <!-- TODO: ховер должен менять цвет чтобы было понятно что можно НАЖАТЬ -->

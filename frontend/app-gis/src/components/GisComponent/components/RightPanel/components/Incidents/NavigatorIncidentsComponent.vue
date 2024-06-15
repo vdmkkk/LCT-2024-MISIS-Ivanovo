@@ -2,29 +2,24 @@
 import { useOptionsStore } from 'src/stores/optionsStore';
 const optionsStore = useOptionsStore();
 import { computed, watch } from 'vue';
-import { NavigationButtonType } from 'src/types/NavigationButtonsType';
+import { NavigationIncidentsButtonType } from 'src/types/NavigationButtonsType';
 
-const navigationButtons: NavigationButtonType[] = [
+const navigationButtons: NavigationIncidentsButtonType[] = [
   {
-    name: 'Паспорт',
-    type: 'passport',
-    logo: 'inventory',
+    name: 'Авария',
+    type: 'incident',
+    logo: 'warning',
   },
+  {
+    name: 'Объекты',
+    type: 'unoms',
+    logo: 'apartment',
+  },
+
   {
     name: 'Сводка',
-    type: 'report',
+    type: 'stats',
     logo: 'dvr',
-  },
-
-  {
-    name: 'Инциденты',
-    type: 'incidents',
-    logo: 'error',
-  },
-  {
-    name: 'Предсказания',
-    type: 'predicts',
-    logo: 'sparkles',
   },
 ];
 
@@ -39,7 +34,7 @@ const containerClass = computed(() => ({
 }));
 
 const handleClose = () => {
-  if (props.open) optionsStore.setRightPanelOption('passport');
+  if (props.open) optionsStore.setRightPanelOption('incident');
 };
 
 watch(props, handleClose);
@@ -80,7 +75,7 @@ watch(props, handleClose);
 .navigation-container {
   position: absolute;
   top: 2.5vh;
-  margin-top: 200px;
+  margin-top: 140px;
   right: 500px;
   transition: right 0.3s ease-in-out;
   border-radius: 30px;

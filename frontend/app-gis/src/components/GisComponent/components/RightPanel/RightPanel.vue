@@ -5,9 +5,15 @@ import { toRefs, computed, onMounted, watch, ref } from 'vue';
 
 import getBuildingByUnom from 'src/api/getBuildingByUnom';
 import BuildingType from 'src/types/BuildingsType';
-import NavigationComponent from './components/NavigatorComponent.vue';
+import NavigationMonitoringComponent from './components/Monitoring/NavigatorMonitoringComponent.vue';
+import NavigatorIncidentsComponent from './components/Incidents/NavigatorIncidentsComponent.vue';
 
-import { RightPanelWidgets } from 'src/types/NavigationButtonsType';
+import {
+  RightPanelMonitoringWidgets,
+  RightPanelIncidentsWidgets,
+} from 'src/types/NavigationButtonsType';
+import getIncidentsById from 'src/api/getIncidentsById';
+import IncidentType from 'src/types/IncidentType';
 
 const props = defineProps<{
   placeId: number | null;
@@ -25,27 +31,36 @@ const optionsStore = useOptionsStore();
 // options to clear on exit
 const loading = ref(false);
 const building = ref<BuildingType>();
+const incident = ref<IncidentType>();
 
 const updateData = async () => {
-  if (props.placeId) {
-    loading.value = true;
-    await getBuildingByUnom(props.placeId as number)
-      .then((res) => {
-        building.value = res;
-        loading.value = false;
-      })
-      .catch((e) => {
-        console.error(e);
-      });
-  } else {
-  }
+  loading.value = true;
+  await getBuildingByUnom(props.placeId as number)
+    .then((res) => {
+      building.value = res;
+      loading.value = false;
+    })
+    .catch((e) => {
+      console.error(e);
+    });
 };
 
 watch(props, updateData);
 </script>
 
 <template>
-  <NavigationComponent :open="!!props.placeId || props.placeId == 0" />
+  <NavigationMonitoringComponent
+    :open="
+      (!!props.placeId || props.placeId == 0) &&
+      optionsStore.mapMode == 'monitoring'
+    "
+  />
+  <NavigatorIncidentsComponent
+    :open="
+      (!!props.placeId || props.placeId == 0) &&
+      optionsStore.mapMode == 'predict'
+    "
+  />
   <div :class="containerClass">
     <q-inner-loading
       :showing="loading"
@@ -71,7 +86,7 @@ watch(props, updateData);
     </h2>
     <q-separator color="red" />
     <component
-      :is="RightPanelWidgets[optionsStore.rightPanelOption]"
+      :is="RightPanelMonitoringWidgets[optionsStore.rightPanelOption]"
       v-bind="{ object: building }"
     ></component>
   </div>
