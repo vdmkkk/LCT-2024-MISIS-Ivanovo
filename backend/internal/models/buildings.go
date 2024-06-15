@@ -6,7 +6,6 @@ type Building struct {
 	Unom                       int           `json:"unom"`                          // Unom is the primary key.
 	Ctp                        null.String   `json:"ctp"`                           // Ctp is a varchar(255).
 	ExternalSystemAddress      null.String   `json:"external_system_address"`       // External system address as TEXT.
-	ExternalSystemID           null.Float    `json:"external_system_id"`            // External system ID as FLOAT8.
 	BTIAddress                 null.String   `json:"bti_address"`                   // BTI address as TEXT.
 	District                   null.String   `json:"district"`                      // District as TEXT.
 	Area                       null.String   `json:"area"`                          // Area as TEXT.
