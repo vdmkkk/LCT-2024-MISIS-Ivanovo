@@ -1,11 +1,17 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
+	"github.com/spf13/viper"
 	"lct/internal/models"
 	"lct/internal/repository"
+	"lct/pkg/config"
 	"lct/pkg/log"
 	"math/rand"
+	"net/http"
 )
 
 type incidentServ struct {
@@ -42,6 +48,43 @@ func imitateMLProcessing(input []int) []models.HandledUnom {
 	return res
 }
 
+func mlProcessing(unomsToProcess []int) ([]models.HandledUnom, error) {
+	res := make([]models.HandledUnom, 0, len(unomsToProcess))
+
+	url := fmt.Sprintf("http://%v:8000/ccalc_cooldown/", viper.GetString(config.MlAppHost))
+
+	jsonData, err := json.Marshal(res)
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling data:", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("error creating request:", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error making request:", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("error: received non-200 response status:", resp.Status)
+	}
+
+	err = json.NewDecoder(resp.Body).Decode(&res)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding response:", err)
+	}
+
+	return res, nil
+}
+
 func (i incidentServ) Create(ctx context.Context, createIncident models.IncidentCreate) (int, error) {
 	var incident models.Incident
 
@@ -68,7 +111,11 @@ func (i incidentServ) Create(ctx context.Context, createIncident models.Incident
 			unomsToProcess = append(unomsToProcess, v.Unom)
 		}
 
-		incident.HandledUnoms = imitateMLProcessing(unomsToProcess)
+		incident.HandledUnoms, err = mlProcessing(unomsToProcess)
+		if err != nil {
+			i.logs.Error(err.Error())
+			return 0, err
+		}
 	} else {
 		building, err := i.buildingRepo.GetByUNOM(ctx, createIncident.Unom)
 		if err != nil {
@@ -78,7 +125,11 @@ func (i incidentServ) Create(ctx context.Context, createIncident models.Incident
 
 		incident.Coordinates = building.GeoDataCenter
 
-		incident.HandledUnoms = imitateMLProcessing([]int{building.Unom})
+		incident.HandledUnoms, err = mlProcessing([]int{building.Unom})
+		if err != nil {
+			i.logs.Error(err.Error())
+			return 0, err
+		}
 	}
 
 	incidentID, err := i.incidentRepo.Create(ctx, incident)
