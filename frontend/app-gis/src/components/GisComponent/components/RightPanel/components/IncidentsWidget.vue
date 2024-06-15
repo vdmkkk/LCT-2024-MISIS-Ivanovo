@@ -49,12 +49,37 @@ const showDialog = ref(false);
       :key="id"
     >
       <q-btn label="Open Dialog" @click="showDialog = true" color="primary" />
-      <h2>ЦТП: {{ ctp_id }}</h2>
-      <p>ID: {{ id }}</p>
-      <!-- TODO: ховер должен менять цвет чтобы было понятно что можно НАЖАТЬ -->
-      <!-- TODO: Обрезать эту хуиту до 8 знаков  -->
-      <p>Координаты: {{ coordinates[0] }} {{ coordinates[1] }}</p>
-      <h2>Затронутые объекты:</h2>
+      <div>
+        <div style="display: flex;">
+          <div style="width: 50%;">
+            <h2 style="font-weight: 400;">ЦТП:</h2>
+          </div>
+          <div style="width: 50%;">
+            <h2>{{ ctp_id }}</h2>
+          </div>
+        </div>
+        
+        <div style="display: flex;">
+          <div style="width: 50%;">
+            <h2 style="font-weight: 400;">ID:</h2>
+          </div>
+          <div style="width: 50%;">
+            <h2> {{ id }}</h2>
+          </div>
+        </div>
+          
+        <div style="display: flex;">
+          <div style="width: 50%;">
+            <h2 style="font-weight: 400;">Координаты: </h2>
+          </div>
+          <div style="width: 50%;">
+            <h2> {{ coordinates[0] }} {{ coordinates[1] }}</h2>
+          </div>
+        </div>
+          <!-- TODO: ховер должен менять цвет чтобы было понятно что можно НАЖАТЬ -->
+          <!-- TODO: Обрезать эту хуиту до 8 знаков  -->
+      </div>
+      <h2 style="font-weight: 400;">Затронутые объекты:</h2>
       <div
         class="handled-unoms"
         v-for="{
@@ -96,7 +121,8 @@ const showDialog = ref(false);
 
   h2 {
     font-size: 1.4em;
-    margin-top: 0px;
+    margin-top: 10px;
+    line-height: 40px;
   }
 
   .incidents {
@@ -107,8 +133,16 @@ const showDialog = ref(false);
 
     .handled-unoms {
       border-radius: 20px;
-      padding: 10px;
+      padding: 20px;
+      padding-bottom: 8px;
       margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      
+      p {
+        font-size: 16px;
+        line-height: 16px;
+      }
     }
   }
 }

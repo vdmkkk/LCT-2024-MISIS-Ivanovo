@@ -61,18 +61,34 @@ onMounted(() => {
           })
         )
       }}
-      <i class="material-icons">{{ list[key].logo }}</i>
-      <h2>{{ list[key].title }}</h2>
-      :
-      <h3>
-        {{
-          Object.entries(data).toSorted((a, b) => {
-            const dateA = new Date(a[0].split('.').reverse().join('-'));
-            const dateB = new Date(b[0].split('.').reverse().join('-'));
-            return dateB - dateA;
-          })[0][1]
-        }}
-      </h3>
+      <div>
+
+        <div style="display: flex; align-items: baseline;">
+          <div style="width: 15%;">
+            <i class="material-symbols-outlined">{{ list[key].logo }}</i>
+          </div>
+          <div style="width: 55%;">
+            <div style="display: flex; align-items: baseline;">
+              
+              <h2 style="width: 95%;">{{ list[key].title }}:</h2>
+            </div>
+          </div>
+          <div style="width: 30%;">
+            <h3>
+              {{
+                Object.entries(data).toSorted((a, b) => {
+                  const dateA = new Date(a[0].split('.').reverse().join('-'));
+                  const dateB = new Date(b[0].split('.').reverse().join('-'));
+                  return dateB - dateA;
+                })[0][1]
+              }}
+            </h3>
+          </div>
+        </div>
+      </div>
+      
+      
+      
     </div>
   </div>
 </template>
@@ -89,10 +105,15 @@ onMounted(() => {
 
   h2 {
     font-size: 1.4em;
+    line-height: 1.4em;
   }
 
   h3 {
     font-size: 1.3em;
+  }
+
+  .material-symbols-outlined {
+    font-size: 32px; 
   }
 }
 </style>
