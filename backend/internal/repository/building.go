@@ -17,7 +17,7 @@ func InitBuildingRepo(db *sqlx.DB) Building {
 }
 
 func (b buildingRepo) GetByUNOM(ctx context.Context, unom int) (models.Building, error) {
-	query := `SELECT unom, ctp, external_system_address, external_system_id, bti_address, district, area, project_series, 
+	query := `SELECT unom, ctp, bti_address, district, area, project_series, 
        number_of_floors, number_of_entrances, number_of_apartments, total_area, total_residential_area, 
        total_non_residential_area, wear_and_tear_bti, wall_materials, emergency_status, 
        number_of_passenger_elevators, number_of_freight_elevators, roof_cleaning_priority, 
@@ -150,7 +150,7 @@ func (b buildingRepo) GetByUNOM(ctx context.Context, unom int) (models.Building,
 }
 
 func (b buildingRepo) GetByCTPID(ctx context.Context, ctpID string) ([]models.Building, error) {
-	query := `SELECT unom, ctp, external_system_address, external_system_id, bti_address, district, area, project_series, 
+	query := `SELECT unom, ctp, external_system_address, bti_address, district, area, project_series, 
        number_of_floors, number_of_entrances, number_of_apartments, total_area, total_residential_area, 
        total_non_residential_area, wear_and_tear_bti, wall_materials, emergency_status, 
        number_of_passenger_elevators, number_of_freight_elevators, roof_cleaning_priority, 
