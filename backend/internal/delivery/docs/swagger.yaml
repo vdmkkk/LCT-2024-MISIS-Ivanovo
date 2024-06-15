@@ -14,9 +14,9 @@ definitions:
     type: object
   models.HandledUnom:
     properties:
-      hours_to_cool:
+      Rank:
         type: integer
-      priority_group:
+      hours:
         type: integer
       unom:
         type: integer
@@ -24,6 +24,10 @@ definitions:
   models.Incident:
     properties:
       coordinates:
+        items:
+          type: number
+        type: array
+      ctp_center:
         items:
           type: number
         type: array
@@ -51,8 +55,16 @@ definitions:
         items:
           type: number
         type: array
+      ctp_id:
+        type: string
       id:
         type: integer
+    type: object
+  models.IncidentUpdate:
+    properties:
+      id:
+        type: integer
+      payload: {}
     type: object
 info:
   contact: {}
@@ -312,6 +324,38 @@ paths:
               type: string
             type: object
       summary: Create incident
+      tags:
+      - incident
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Incident update
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.IncidentUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully
+          schema:
+            type: integer
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update incident payload
       tags:
       - incident
   /incident/all:

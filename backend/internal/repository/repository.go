@@ -26,6 +26,7 @@ type Incident interface {
 	GetByID(ctx context.Context, id int) (models.Incident, error)
 	Create(ctx context.Context, processedIncident models.Incident) (int, error)
 	GetAllByUNOM(ctx context.Context, unom int) ([]models.Incident, error)
+	UpdatePayload(ctx context.Context, incidentUpdate models.IncidentUpdate) error
 }
 
 type MlPredict interface {

@@ -359,6 +359,55 @@ const docTemplate = `{
                     }
                 }
             },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "incident"
+                ],
+                "summary": "Update incident payload",
+                "parameters": [
+                    {
+                        "description": "Incident update",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.IncidentUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
             "post": {
                 "consumes": [
                     "application/json"
@@ -578,10 +627,10 @@ const docTemplate = `{
         "models.HandledUnom": {
             "type": "object",
             "properties": {
-                "hours_to_cool": {
+                "Rank": {
                     "type": "integer"
                 },
-                "priority_group": {
+                "hours": {
                     "type": "integer"
                 },
                 "unom": {
@@ -593,6 +642,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "coordinates": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "ctp_center": {
                     "type": "array",
                     "items": {
                         "type": "number"
@@ -634,9 +689,21 @@ const docTemplate = `{
                         "type": "number"
                     }
                 },
+                "ctp_id": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
                 }
+            }
+        },
+        "models.IncidentUpdate": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "payload": {}
             }
         }
     }

@@ -133,3 +133,33 @@ func (i IncidentHandler) GetByUNOM(c *gin.Context) {
 
 	c.JSON(http.StatusOK, incidents)
 }
+
+// @Summary Update incident payload
+// @Tags incident
+// @Accept  json
+// @Produce  json
+// @Param data body models.IncidentUpdate true "Incident update"
+// @Success 200 {object} int "Successfully"
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /incident [put]
+func (i IncidentHandler) Update(c *gin.Context) {
+	var incidentUpdate models.IncidentUpdate
+
+	if err := c.ShouldBindJSON(&incidentUpdate); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(viper.GetInt(config.TimeOut))*time.Millisecond)
+	defer cancel()
+
+	err := i.incidentServ.UpdatePayload(ctx, incidentUpdate)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusOK)
+}

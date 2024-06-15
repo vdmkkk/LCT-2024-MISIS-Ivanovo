@@ -29,3 +29,8 @@ type IncidentCreate struct {
 	Unom int
 	IncidentBase
 }
+
+type IncidentUpdate struct {
+	ID      int         `json:"id"`
+	Payload interface{} `json:"payload"`
+}

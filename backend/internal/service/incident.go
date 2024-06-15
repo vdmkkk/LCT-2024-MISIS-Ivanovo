@@ -178,3 +178,13 @@ func (i incidentServ) GetAllByUNOM(ctx context.Context, unom int) ([]models.Inci
 
 	return incidents, nil
 }
+
+func (i incidentServ) UpdatePayload(ctx context.Context, incidentUpdate models.IncidentUpdate) error {
+	err := i.incidentRepo.UpdatePayload(ctx, incidentUpdate)
+	if err != nil {
+		i.logs.Error(err.Error())
+		return err
+	}
+
+	return nil
+}

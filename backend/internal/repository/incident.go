@@ -218,3 +218,37 @@ func (i incidentRepo) GetAllByUNOM(ctx context.Context, unom int) ([]models.Inci
 
 	return incidents, nil
 }
+
+func (i incidentRepo) UpdatePayload(ctx context.Context, incidentUpdate models.IncidentUpdate) error {
+	tx, err := i.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	query := `UPDATE incidents SET payload = $2 WHERE id = $1`
+
+	payloadJSON, err := json.Marshal(incidentUpdate.Payload)
+	if err != nil {
+		rbErr := tx.Rollback()
+		if rbErr != nil {
+			return fmt.Errorf("error: %v, rbErr: %v", err, rbErr)
+		}
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, query, incidentUpdate.ID, payloadJSON)
+	if err != nil {
+		rbErr := tx.Rollback()
+		if rbErr != nil {
+			return fmt.Errorf("error: %v, rbErr: %v", err, rbErr)
+		}
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
