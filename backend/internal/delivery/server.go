@@ -67,6 +67,9 @@ func Start(db *sqlx.DB, logger *log.Logs) {
 
 	r.POST("/ml_predict_write", mlPredictHandler.SavePredictsFromDate)
 
+	authHandler := handlers.InitAuthHandler()
+	r.POST("/login", authHandler.Login)
+
 	if err := r.Run("0.0.0.0:8080"); err != nil {
 		panic(fmt.Sprintf("error running client: %v", err.Error()))
 	}

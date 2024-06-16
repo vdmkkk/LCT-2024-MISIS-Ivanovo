@@ -11,6 +11,10 @@ import (
 
 func (m Middleware) Authorization() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if c.Request.URL.Path == "/login" {
+			c.Next()
+			return
+		}
 		auth := c.GetHeader("Authorization")
 		if !strings.Contains(auth, "Bearer") {
 			m.logger.Info(fmt.Sprintf("unathorized (NO JWT) access at: %v", c.Request.URL.Path))

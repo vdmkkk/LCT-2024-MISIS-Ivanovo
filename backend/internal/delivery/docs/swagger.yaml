@@ -490,6 +490,43 @@ paths:
       summary: Get incidents by unom
       tags:
       - incident
+  /login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: login
+        in: query
+        name: login
+        required: true
+        type: integer
+      - description: password
+        in: query
+        name: password
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully
+          schema:
+            type: integer
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login
+      tags:
+      - auth
   /ml_predict_write:
     post:
       consumes:
