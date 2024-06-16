@@ -17,26 +17,18 @@ func InitCtpRepo(db *sqlx.DB) Ctp {
 
 func (c ctpRepo) GetByCTPID(ctx context.Context, ctpID string) (models.Ctp, error) {
 	query := `SELECT id, ctp_id, address, type, placement_type, source, administrative, municipal, start_date, balance_holder,
-		to_json(polygon), to_json(center)
+       to_json(center)
 	FROM ctps
 	WHERE ctp_id = $1;`
 
 	row := c.db.QueryRowContext(ctx, query, ctpID)
 
 	var ctp models.Ctp
-	var polygonJSON []byte
 	var centerJSON []byte
 	err := row.Scan(&ctp.ID, &ctp.CtpId, &ctp.Address, &ctp.Type, &ctp.PlacementType, &ctp.Source, &ctp.Administrative,
-		&ctp.Municipal, &ctp.StartDate, &ctp.BalanceHolder, &polygonJSON, &centerJSON)
+		&ctp.Municipal, &ctp.StartDate, &ctp.BalanceHolder, &centerJSON)
 	if err != nil {
 		return models.Ctp{}, err
-	}
-
-	if polygonJSON != nil {
-		err = json.Unmarshal(polygonJSON, &ctp.Polygon)
-		if err != nil {
-			return models.Ctp{}, err
-		}
 	}
 
 	if centerJSON != nil {
