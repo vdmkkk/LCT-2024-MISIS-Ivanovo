@@ -1,9 +1,10 @@
 package models
 
 type IncidentShowUp struct {
-	ID          int       `json:"id"`
-	Coordinates []float64 `json:"coordinates"`
-	CtpID       string    `json:"ctp_id"`
+	ID          int         `json:"id"`
+	Coordinates []float64   `json:"coordinates"`
+	CtpID       string      `json:"ctp_id"`
+	Payload     interface{} `json:"payload"`
 }
 
 type HandledUnom struct {
