@@ -1,9 +1,13 @@
 package middleware
 
-import "lct/pkg/log"
+import (
+	"lct/pkg/log"
+	"lct/pkg/security"
+)
 
 type Middleware struct {
-	logger *log.Logs
+	logger  *log.Logs
+	jwtUtil security.JWTUtil
 }
 
 func InitMiddleware(logger *log.Logs) Middleware {

@@ -17,6 +17,7 @@ const (
 	TimeOut    = "TIME_OUT"
 	MlAppHost  = "ML_APP_HOST"
 	MlAppPort  = "ML_APP_PORT"
+	Secret     = "secret"
 )
 
 func InitConfig() {
