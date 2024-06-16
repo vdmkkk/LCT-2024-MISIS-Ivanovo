@@ -16,8 +16,8 @@ func InitAuthHandler() AuthHandler {
 // @Tags auth
 // @Accept  json
 // @Produce  json
-// @Param login query int true "login"
-// @Param password query int true "password"
+// @Param login query string true "login"
+// @Param password query string true "password"
 // @Success 200 {object} int "Successfully"
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 500 {object} map[string]string "Internal server error"
