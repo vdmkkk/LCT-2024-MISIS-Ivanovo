@@ -1602,17 +1602,16 @@ class CatBoostModel:
                     weight = 1
 
                 # Определение весов режима работы
-
                 working_time = new_dict['Режим работы']
-                working_time_mapping = {'Круглосуточно': 3, '9:00 - 21:00': 2, '9:00 – 18:00': 1}  # Словарь для сопоставления уровня энергоэффективности с числовым значением
-                working_weight = working_time_mapping.get(working_time, 1)  # По умолчанию, если энергоэффективность неизвестна или некорректна
+                working_time_mapping = {'Круглосуточно': 3, '9:00 - 21:00': 2, '9:00 – 18:00': 1}  # Словарь для сопоставления графика работы с числовым значением
+                working_weight = working_time_mapping.get(working_time, 1)  # По умолчанию, если график работы неизвестен или некорректен
 
                 if hours <= 2:
                     # приоритет максимальный (1)
                     return 1
                 else:
                     # Формула для расчета приоритета
-                    return 4 - ((weight + efficiency_weight + working_weight) / hours)
+                    return (hours / (weight + efficiency_weight + working_weight))
             else:
                 return None
 
