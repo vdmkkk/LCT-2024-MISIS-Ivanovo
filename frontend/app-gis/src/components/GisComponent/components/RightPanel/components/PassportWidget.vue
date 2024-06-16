@@ -100,7 +100,7 @@ const keys = {
     },
     logo: 'my_location',
   },
-  'Душные цифры': {
+  Остальное: {
     list: {
       global_id: 'global_id',
       UNAD: 'unad',
@@ -128,23 +128,27 @@ const keys = {
   <div class="passport-container">
     <h1>Паспорт</h1>
     <div v-for="[caregory, objects] in Object.entries(keys)" :key="caregory">
-      <div style="display: flex; gap: 10px; margin-top: 30px;">
+      <div style="display: flex; gap: 10px; margin-top: 30px">
         <i class="material-icons">{{ objects.logo }}</i>
         <h2>{{ caregory }}</h2>
       </div>
       <div v-for="[title, value] in Object.entries(objects.list)" :key="title">
-        <h3 v-if="props.object && props.object[value] !== null && props.object[value] !== ''">
-          <div style="display: flex;">
-            <div style="width: 50%;">
+        <h3
+          v-if="
+            props.object &&
+            props.object[value] !== null &&
+            props.object[value] !== ''
+          "
+        >
+          <div style="display: flex">
+            <div style="width: 50%">
               <b>{{ title }}:</b>
             </div>
-            <div style="width: 50%;">
+            <div style="width: 50%">
               {{ props.object[value] }}
             </div>
           </div>
         </h3>
-
-
       </div>
     </div>
   </div>
@@ -175,8 +179,8 @@ const keys = {
   h3 {
     font-size: 1.3em;
     line-height: 1.3em;
-    padding-top: .2em;
-    padding-bottom: .2em;
+    padding-top: 0.2em;
+    padding-bottom: 0.2em;
   }
 
   .material-icons {

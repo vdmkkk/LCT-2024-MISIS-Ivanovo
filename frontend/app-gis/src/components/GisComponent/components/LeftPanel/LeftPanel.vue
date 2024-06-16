@@ -7,6 +7,8 @@ import ServicesSelect from './components/ServicesSelect.vue';
 import FiltersWidget from './components/FiltersWidget.vue';
 import StatsWidget from './components/StatsWidget/StatsWidget.vue';
 import NotificationsWidget from './components/NotificationsWidget.vue';
+import { useRouter } from 'vue-router';
+const router = useRouter();
 
 const optionsStore = useOptionsStore();
 const handleIconClick = optionsStore.setLeftPanelOption;
@@ -14,17 +16,20 @@ const handleIconClick = optionsStore.setLeftPanelOption;
 
 <template>
   <div class="container">
-    <img src="src/assets/logo.png" class="logo" />
+    <img
+      src="https://psv4.userapi.com/c235131/u346561169/docs/d9/60fd75dba9c7/logo.png?extra=fYAxDgImCxMzs6brwpG1GkhdIy-WgtM05t9DKtPoDtBOh5kF-og1pjyDirBqNRBWdTZG_52W4Zd4LlCXDKTpc6ge12egp4Kk_5dRwv5jZVH9mtnOruOJy2QNz3zqVUxP8KitftsMf6RoulkYKfLBh7wdUg"
+      class="logo"
+    />
 
-    <div class="icon-wrapper" @click="handleIconClick('location')">
+    <div class="icon-wrapper" @click="router.push('/upload')">
       <i
         :class="[
           'material-icons',
-          { selected: optionsStore.leftPanelOption === 'location' },
+          { selected: optionsStore.leftPanelOption === 'add' },
         ]"
-        >location_on</i
+        >add</i
       >
-      <div class="tooltip">Модуль карты</div>
+      <div class="tooltip">Загрузить данные</div>
     </div>
 
     <div class="icon-wrapper" @click="handleIconClick('notifications')">

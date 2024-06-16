@@ -43,30 +43,27 @@ onMounted(() => {
   if (props.object?.['unom'])
     // @ts-ignore //
     getDynamicDataForUnom(props.object['unom']).then((res) => {
-      console.log(res);
+      console.log(
+        Object.values(Object.entries(res['odpu_plot'])[0][1]).length > 0
+      );
       data.value = res['odpu_plot'];
     });
 });
+
+const today = process.env.VUE_APP_START_DATE.toString().split('T')[0];
 </script>
 
 <template>
   <div
     v-if="
-      !!data
-        ? Object.keys(
-            Object.values({
-              predict: {},
-              incidents_count: {},
-              odpu_plot: {},
-            })[0]
-          ).length > 0
-        : !!data
+      !!data ? Object.values(Object.entries(data)[0][1]).length > 0 : !!data
     "
     class="report-container"
   >
     <h1>Сводка</h1>
+    <h2>Последнее обновление: {{ today }}</h2>
     <div v-for="[key, data] in Object.entries(data)" :key="key">
-      <div>
+      <div v-if="Object.values(data).length > 0">
         <div style="display: flex; align-items: baseline">
           <div style="width: 15%">
             <i class="material-symbols-outlined">{{ list[key].logo }}</i>

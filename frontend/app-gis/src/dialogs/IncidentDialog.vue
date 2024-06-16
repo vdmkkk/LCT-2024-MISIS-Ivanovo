@@ -185,107 +185,144 @@ const handleSave = async () => {
         >
       </q-card-section>
 
-      <div style="display: flex; align-items: center; padding:20px; margin-left:12px">
+      <div
+        style="
+          display: flex;
+          align-items: center;
+          padding: 20px;
+          margin-left: 12px;
+        "
+      >
         <div :style="getStatus(incidentClosed)" />
-        <h3 style="margin: 0; margin-left:20px">
-          Статус: {{ incidentClosed ? 'Неакивна' : 'Активна' }}
+        <h3 style="margin: 0; margin-left: 20px">
+          Статус: {{ incidentClosed ? 'Неактивна' : 'Активна' }}
         </h3>
       </div>
 
       <div class="incidents-dialog">
         <h2 v-if="incidentData?.ctp_id">ЦТП: {{ incidentData?.ctp_id }}</h2>
         <h2>ID: {{ incidentData?.id }}</h2>
-        <q-input outlined v-model="description" label="Описание" style="margin-left:16px; margin-right:16px; font-size:16px" />
-        <div style="display: flex; align-items:center; margin-top:20px">
-          <h3 style="margin-top:0px">Закрыть аварию</h3>
+        <q-input
+          outlined
+          v-model="description"
+          label="Описание"
+          style="margin-left: 16px; margin-right: 16px; font-size: 16px"
+        />
+        <div style="display: flex; align-items: center; margin-top: 20px">
+          <h3 style="margin-top: 0px">Закрыть аварию</h3>
           <q-toggle v-model="incidentClosed" />
         </div>
 
-        <div style="display:flex; ">
-        <div>
-        <h3>Время регистрации</h3>
-        <div class="q-pa-md" style="max-width: 300px">
-          <q-input filled v-model="date_start">
-            <template v-slot:prepend>
-              <q-icon name="event" class="cursor-pointer">
-                <q-popup-proxy
-                  cover
-                  transition-show="scale"
-                  transition-hide="scale"
-                >
-                  <q-date v-model="date_start" mask="HH:mm DD-MM-YYYY">
-                    <div class="row items-center justify-end">
-                      <q-btn v-close-popup label="Close" color="primary" flat />
-                    </div>
-                  </q-date>
-                </q-popup-proxy>
-              </q-icon>
-            </template>
+        <div style="display: flex">
+          <div>
+            <h3>Время регистрации</h3>
+            <div class="q-pa-md" style="max-width: 300px">
+              <q-input filled v-model="date_start">
+                <template v-slot:prepend>
+                  <q-icon name="event" class="cursor-pointer">
+                    <q-popup-proxy
+                      cover
+                      transition-show="scale"
+                      transition-hide="scale"
+                    >
+                      <q-date v-model="date_start" mask="HH:mm DD-MM-YYYY">
+                        <div class="row items-center justify-end">
+                          <q-btn
+                            v-close-popup
+                            label="Close"
+                            color="primary"
+                            flat
+                          />
+                        </div>
+                      </q-date>
+                    </q-popup-proxy>
+                  </q-icon>
+                </template>
 
-            <template v-slot:append>
-              <q-icon name="access_time" class="cursor-pointer">
-                <q-popup-proxy
-                  cover
-                  transition-show="scale"
-                  transition-hide="scale"
-                >
-                  <q-time
-                    v-model="date_start"
-                    mask="HH:mm DD-MM-YYYY"
-                    format24h
-                  >
-                    <div class="row items-center justify-end">
-                      <q-btn v-close-popup label="Close" color="primary" flat />
-                    </div>
-                  </q-time>
-                </q-popup-proxy>
-              </q-icon>
-            </template>
-          </q-input>
-        </div>
-      </div>
-      <div>
-        <h3>Время закрытия</h3>
-        <div class="q-pa-md" style="max-width: 300px">
-          <q-input :disable="!incidentClosed" filled v-model="date_end">
-            <template v-slot:prepend>
-              <q-icon name="event" class="cursor-pointer">
-                <q-popup-proxy
-                  cover
-                  transition-show="scale"
-                  transition-hide="scale"
-                >
-                  <q-date v-model="date_end" mask="HH:mm DD-MM-YYYY">
-                    <div class="row items-center justify-end">
-                      <q-btn v-close-popup label="Close" color="primary" flat />
-                    </div>
-                  </q-date>
-                </q-popup-proxy>
-              </q-icon>
-            </template>
+                <template v-slot:append>
+                  <q-icon name="access_time" class="cursor-pointer">
+                    <q-popup-proxy
+                      cover
+                      transition-show="scale"
+                      transition-hide="scale"
+                    >
+                      <q-time
+                        v-model="date_start"
+                        mask="HH:mm DD-MM-YYYY"
+                        format24h
+                      >
+                        <div class="row items-center justify-end">
+                          <q-btn
+                            v-close-popup
+                            label="Close"
+                            color="primary"
+                            flat
+                          />
+                        </div>
+                      </q-time>
+                    </q-popup-proxy>
+                  </q-icon>
+                </template>
+              </q-input>
+            </div>
+          </div>
+          <div>
+            <h3>Время закрытия</h3>
+            <div class="q-pa-md" style="max-width: 300px">
+              <q-input :disable="!incidentClosed" filled v-model="date_end">
+                <template v-slot:prepend>
+                  <q-icon name="event" class="cursor-pointer">
+                    <q-popup-proxy
+                      cover
+                      transition-show="scale"
+                      transition-hide="scale"
+                    >
+                      <q-date v-model="date_end" mask="HH:mm DD-MM-YYYY">
+                        <div class="row items-center justify-end">
+                          <q-btn
+                            v-close-popup
+                            label="Close"
+                            color="primary"
+                            flat
+                          />
+                        </div>
+                      </q-date>
+                    </q-popup-proxy>
+                  </q-icon>
+                </template>
 
-            <template v-slot:append>
-              <q-icon name="access_time" class="cursor-pointer">
-                <q-popup-proxy
-                  cover
-                  transition-show="scale"
-                  transition-hide="scale"
-                >
-                  <q-time v-model="date_end" mask="HH:mm DD-MM-YYYY" format24h>
-                    <div class="row items-center justify-end">
-                      <q-btn v-close-popup label="Close" color="primary" flat />
-                    </div>
-                  </q-time>
-                </q-popup-proxy>
-              </q-icon>
-            </template>
-          </q-input>
+                <template v-slot:append>
+                  <q-icon name="access_time" class="cursor-pointer">
+                    <q-popup-proxy
+                      cover
+                      transition-show="scale"
+                      transition-hide="scale"
+                    >
+                      <q-time
+                        v-model="date_end"
+                        mask="HH:mm DD-MM-YYYY"
+                        format24h
+                      >
+                        <div class="row items-center justify-end">
+                          <q-btn
+                            v-close-popup
+                            label="Close"
+                            color="primary"
+                            flat
+                          />
+                        </div>
+                      </q-time>
+                    </q-popup-proxy>
+                  </q-icon>
+                </template>
+              </q-input>
+            </div>
+          </div>
         </div>
-        </div>
-      </div>
-        <h3 style="margin-bottom:20px; margin-top:0px; font-weight:300">
-          <strong style="font-weight:400">Координаты:</strong> {{ incidentData?.coordinates[0].toString().slice(0,8) }}
-          {{ incidentData?.coordinates[1].toString().slice(0,8) }}
+        <h3 style="margin-bottom: 20px; margin-top: 0px; font-weight: 300">
+          <strong style="font-weight: 400">Координаты:</strong>
+          {{ incidentData?.coordinates[0].toString().slice(0, 8) }}
+          {{ incidentData?.coordinates[1].toString().slice(0, 8) }}
         </h3>
         <h2>Затронутые объекты:</h2>
         <div
@@ -299,13 +336,21 @@ const handleSave = async () => {
           :style="getPriorityStyles(priority_group)"
         >
           <p>{{ unom }}</p>
-          <p>Часов до остывания: {{ hours_to_cool }}</p>
+          <p>Часов до T {{ '<' }} min: {{ hours_to_cool }}</p>
+          <p>Часов до остывания трубы: {{ Math.ceil(hours_to_cool / 1.5) }}</p>
+          <!-- )) -->
+
           <p>Приоритет: {{ priority_group }}</p>
         </div>
-        <q-btn  :class="{ 'disabled-class': isSaveButtonDisabled, 'enabled-class':!isSaveButtonDisabled }" :disable="isSaveButtonDisabled" @click="handleSave"
+        <q-btn
+          :class="{
+            'disabled-class': isSaveButtonDisabled,
+            'enabled-class': !isSaveButtonDisabled,
+          }"
+          :disable="isSaveButtonDisabled"
+          @click="handleSave"
           >Сохранить
         </q-btn>
-
       </div>
     </q-card>
   </q-dialog>
@@ -318,58 +363,57 @@ const handleSave = async () => {
   border-radius: 20px;
 
   .enabled-class {
-    margin-top:20px; 
-    border-radius:10px; 
-    margin-left:16px; 
-    margin-bottom:4px; 
-    min-width: 200px; 
-    background-color:#dedede;
-    transition: .3s ease;
+    margin-top: 20px;
+    border-radius: 10px;
+    margin-left: 16px;
+    margin-bottom: 4px;
+    min-width: 200px;
+    background-color: #dedede;
+    transition: 0.3s ease;
   }
-  
 
   .enabled-class:hover {
-    background-color:#f8f8f8;
+    background-color: #f8f8f8;
   }
 
   .disabled-class {
-    margin-top:20px; 
-    border-radius:10px; 
-    margin-left:16px; 
-    margin-bottom:4px; 
-    min-width: 200px; 
-    background-color:#dedede;
-    transition: .3s ease;
+    margin-top: 20px;
+    border-radius: 10px;
+    margin-left: 16px;
+    margin-bottom: 4px;
+    min-width: 200px;
+    background-color: #dedede;
+    transition: 0.3s ease;
   }
 
   h2 {
-    font-size:32px;
+    font-size: 32px;
     // margin-bottom:0px;
-    margin-top:0px;
-    line-height:32px;
-    margin-left:16px;
+    margin-top: 0px;
+    line-height: 32px;
+    margin-left: 16px;
   }
 
   h3 {
-    font-size:24px;
-    margin-bottom:0px;
-    margin-left:16px;
-    margin-top:10px;
+    font-size: 24px;
+    margin-bottom: 0px;
+    margin-left: 16px;
+    margin-top: 10px;
   }
 
   .handled-unoms {
     border-radius: 20px;
     padding: 10px;
     margin-top: 10px;
-    margin-inline:16px;
-    padding:20px;
-    display:flex;
-    justify-content:space-between;
+    margin-inline: 16px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
 
     p {
-      font-size:20px;
-      margin-bottom:0px;
-      margin-inline:20px;
+      font-size: 16px;
+      margin-bottom: 0px;
+      margin-inline: 20px;
     }
   }
 }

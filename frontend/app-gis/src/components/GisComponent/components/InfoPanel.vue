@@ -23,7 +23,31 @@ watch(mapModeObject, changeLabel);
 
 const currentDate = ref(new Date());
 
+const props = defineProps<{
+  data: Map<string, number[]>;
+}>();
+
+interface TaskData {
+  name: string;
+  y: number;
+}
+
+const taskData = ref<TaskData[]>([]);
+
 onMounted(() => {
+  const taskKeys = ['Без событий'];
+
+  if (props.data) {
+    taskData.value = Object.entries(props.data)
+      .filter(([key]) => taskKeys.includes(key))
+      .map(([key, value]) => {
+        return {
+          name: key,
+          y: value, // Используем первое значение из массива
+        };
+      });
+  }
+
   const interval = setInterval(() => {
     currentDate.value = new Date();
   }, 1000);
@@ -57,6 +81,9 @@ const formattedDate = computed(() => {
       <h5>
         <span class="material-symbols-outlined"> partly_cloudy_day </span>+21°
       </h5>
+      <div v-for="task in taskData" :key="task.name">
+        <h5>{{ task.name }}: {{ task.y }}</h5>
+      </div>
     </div>
   </div>
 </template>
@@ -72,6 +99,9 @@ const formattedDate = computed(() => {
   padding-left: 15px;
   padding-right: 40px;
   padding-bottom: 30px;
+  padding: 24px;
+  padding-top: 4px;
+  opacity: .7;
 
   h4 {
     font-size: 1.8em;

@@ -2,7 +2,7 @@ import { ml } from 'src/boot/axios';
 
 const getStats = async () => {
   // const today = new Date().toISOString().split('.')[0];
-  const today = '2024-04-01T00:00:00';
+  const today = process.env.VUE_APP_START_DATE;
   return await ml
     .get(`/get_stats?date=${today}`)
     .then((res) => {
