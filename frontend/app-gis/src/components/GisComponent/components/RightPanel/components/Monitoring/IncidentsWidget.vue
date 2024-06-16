@@ -55,6 +55,19 @@ const handleOpenDialog = () => {
   console.log('bruh');
   showDialog.value = true;
 };
+
+const formatDate = (date: string | null): string => {
+  if (!date) return '';
+  const options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  };
+  return new Date(date).toLocaleString('ru-RU', options);
+};
+
 </script>
 
 <template>
@@ -73,16 +86,15 @@ const handleOpenDialog = () => {
       :key="id"
       @click="handleOpenDialog"
     >
-      <!-- TODO: ховер должен менять цвет чтобы было понятно что можно НАЖАТЬ -->
       <div>
         <div style="display: flex; align-items: center">
           <div :style="getStatus(payload.date_end)" />
-          <h3 style="margin: 0">
+          <h3 style="margin: 0; margin-left: 10px; font-size: 32px; font-weight: 500;">
             Статус: {{ payload.date_end ? 'Неакивна' : 'Активна' }}
           </h3>
         </div>
-        <!-- TODO: если ЦТП нету, то не выводить это -->
-        <div style="display: flex">
+
+        <div v-if="ctp_id" style="display: flex">
           <div style="width: 50%">
             <h2 style="font-weight: 400">ЦТП:</h2>
           </div>
@@ -114,18 +126,16 @@ const handleOpenDialog = () => {
             <h2 style="font-weight: 400">Дата регистрации:</h2>
           </div>
           <div style="width: 50%">
-            <!-- TODO: нужно тут обработать дату, привести к формату hh:mm dd:MM:yyyy -->
-            <h2>{{ payload.date_start }}</h2>
+            <h2>{{ formatDate(payload.date_start) }}</h2>
           </div>
         </div>
 
-        <div style="display: flex">
+        <div  style="display: flex">
           <div style="width: 50%">
             <h2 style="font-weight: 400">Дата закрытия:</h2>
           </div>
           <div style="width: 50%">
-            <!-- TODO: добавь проверку что существует. В случае чего поставь "-" -->
-            <h2>{{ payload.date_end }}</h2>
+            <h2>{{ payload.date_end? formatDate(payload.date_end) : '-' }}</h2>
           </div>
         </div>
 
@@ -133,13 +143,12 @@ const handleOpenDialog = () => {
           <div style="width: 50%">
             <h2 style="font-weight: 400">Координаты:</h2>
           </div>
-          <!-- TODO: Обрезать эту хуиту до 8 знаков  -->
           <div style="width: 50%">
-            <h2>{{ coordinates[0] }} {{ coordinates[1] }}</h2>
+            <h2>{{ coordinates[0].toString().slice(0, 8) }} {{ coordinates[1].toString().slice(0, 8) }}</h2>
           </div>
         </div>
       </div>
-      <h2 style="font-weight: 400">Затронутые объекты:</h2>
+      <h2 style="font-weight: 500; margin-top: 20px;">Затронутые объекты:</h2>
       <div
         class="handled-unoms"
         v-for="{
@@ -171,7 +180,7 @@ const handleOpenDialog = () => {
 <style scoped lang="scss">
 .incidents-container {
   max-height: 75vh;
-  overflow-y: auto;
+  overflow-y:visible;
   h1 {
     font-size: 1.9em;
     font-weight: 500;
@@ -181,6 +190,7 @@ const handleOpenDialog = () => {
   h2 {
     font-size: 1.4em;
     margin-top: 10px;
+    margin-bottom: 10px;
     line-height: 40px;
   }
 
@@ -189,6 +199,9 @@ const handleOpenDialog = () => {
     padding: 10px;
     padding: 16px;
     border-radius: 20px;
+    box-shadow: 4px 4px 15px rgba(0,0,0,.1);
+    transition: .3s ease;
+    cursor: pointer;
 
     .handled-unoms {
       border-radius: 20px;
@@ -203,6 +216,11 @@ const handleOpenDialog = () => {
         line-height: 16px;
       }
     }
+  }
+
+  .incidents:hover {
+    box-shadow: 4px 4px 25px rgba(0,0,0,.3);
+    background-color: #eeeeee;
   }
 }
 </style>
