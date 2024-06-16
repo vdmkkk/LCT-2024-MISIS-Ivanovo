@@ -4,7 +4,6 @@ import { MarkerClusterer } from '@googlemaps/markerclusterer';
 
 import RighPanel from './components/RightPanel/RightPanel.vue';
 import LeftPanel from './components/LeftPanel/LeftPanel.vue';
-import getAllPolygons from 'src/api/getAllPolygons';
 import getAllIncidents from 'src/api/getAllIncidents';
 
 import { useOptionsStore } from 'src/stores/optionsStore';
@@ -13,13 +12,20 @@ import { useQuasar } from 'quasar';
 import getGeoByFilters from 'src/api/getGeoByFilters';
 import { GeoType1, GeoType2, GeoType3 } from 'src/types/GeoType';
 import CreateArea from 'src/composables/createArea';
+import getHeatmapColor from 'src/composables/getHexForHeatmap';
 import Highcharts from 'highcharts';
 import IncidentDialog from 'src/dialogs/IncidentDialog.vue';
 import OpenIncidentDialog from './components/OpenIncidentsDialog.vue';
+import PredictMode from './components/PredictMode.vue';
+import InfoPanel from './components/InfoPanel.vue';
+import PredictTimeline from './components/PredictTimeline.vue';
+import LegendWidget from './components/LegendWidget.vue';
+import CreateIncident from './components/CreateIncident.vue';
 
 const $q = useQuasar();
 const colors = Highcharts.getOptions().colors;
 const showIncidentDialog = ref(false);
+const showIncidentCreateDialog = ref(false);
 
 // all the map controls
 const mapRef = ref<google.maps.Map | null>(null);
@@ -32,15 +38,9 @@ const areaPolygonsRef = ref<google.maps.Polygon[]>([]);
 const currPolygon = ref<number | null>();
 const currIncident = ref<number | null>();
 const currMarker = ref<string | number | null>();
+const currPredictDate = ref('2024-04-01T00:00:00');
+const predictMode = ref(0);
 const optionsStore = useOptionsStore();
-
-const coordinates = [
-  { lat: 55.752004, lng: 37.617734 },
-  { lat: 55.752104, lng: 37.617834 },
-  { lat: 55.752204, lng: 37.617934 },
-  { lat: 55.752304, lng: 37.618034 },
-  { lat: 55.752404, lng: 37.618134 },
-];
 
 const clickMap = () => {
   if (optionsStore.mapMode == 'monitoring') {
@@ -94,7 +94,7 @@ const handleMarkers = (type: 'ctp' | 'tec', ctps: any) => {
     if (position) {
       const marker = new google.maps.Marker({
         position: { lat: position[1], lng: position[0] },
-        title: 'Marker Title',
+        title: `ЦТП ${ctp_id}`,
         icon: {
           url: `src/assets/markers/${type}${
             currMarker.value == i ? '_active' : ''
@@ -186,21 +186,32 @@ const updateMarkers = () => {
 
 watch(currMarker, () => updateMarkers());
 
-const handleBuildingRender = (buidlings: GeoType3) => {
+const handleBuildingRender = (buidlings: GeoType3, predictDate: string) => {
   // @ts-ignore // sorry, too tired for this dumb shit. Tried my best
   const allCoordinates: number[][] = [];
   buidlings.forEach(
-    ({ UNOM: unom, coordinates: coords, Area: string }: any) => {
+    ({
+      UNOM: unom,
+      coordinates: coords,
+      Area: string,
+      probabilites: probabilites,
+    }: any) => {
       coords.forEach((newObj: any) => {
         allCoordinates.push(newObj);
         const newPolygon = new google.maps.Polygon({
           paths: newObj.map(([lat, lng]: [number, number]) => {
             return { lat: lng, lng: lat };
           }),
-          strokeColor: '#9c9c9c',
+          strokeColor:
+            predictDate === ''
+              ? '#9c9c9c'
+              : getHeatmapColor(probabilites[predictMode.value]),
           strokeOpacity: 0.8,
           strokeWeight: 2,
-          fillColor: '#9c9c9c',
+          fillColor:
+            predictDate === ''
+              ? '#9c9c9c'
+              : getHeatmapColor(probabilites[predictMode.value]),
           fillOpacity: 0.35,
           zIndex: 999,
         });
@@ -217,18 +228,19 @@ onMounted(() => {
   loadData();
 });
 
-const getDataMonitoring = async () => {
-  await getGeoByFilters()
+const getDataMonitoring = async (predictDate = '') => {
+  await getGeoByFilters(predictDate)
     .then((res) => {
       (Object.entries(res) as GeoType1[]).forEach(([district, districtObj]) => {
         (Object.entries(districtObj) as GeoType2[]).forEach(
           ([tec, tecObjects], index) => {
             const allCoordinates = handleBuildingRender(
               // @ts-ignore //
-              tecObjects['buildings']
+              tecObjects['buildings'],
+              predictDate
             );
             // @ts-ignore //
-            handleMarkers('ctp', tecObjects['ctps']);
+            if (predictDate === '') handleMarkers('ctp', tecObjects['ctps']);
             // @ts-ignore //
             if (tec != 'null' && tec != '') {
               const newPolygon = new google.maps.Polygon({
@@ -262,7 +274,7 @@ const handleMarkersIncident = (incidents: any) => {
     if (position) {
       const marker = new google.maps.Marker({
         position: { lat: position[1], lng: position[0] },
-        title: 'Marker Title',
+        title: `Инцидент #${id}`,
         icon: {
           url: `src/assets/markers/${
             ctp_id === '' ? 'building' : 'ctp'
@@ -299,10 +311,6 @@ const getDataIncident = async () => {
   });
 };
 
-const getDataPredict = async () => {
-  console.log();
-};
-
 const loadData = async () => {
   $q.loading.show({ message: 'Идет загрузка карты. Пожалуйста, подождите' });
 
@@ -335,7 +343,8 @@ const loadData = async () => {
     await getDataIncident();
   }
   if (optionsStore.mapMode === 'predict') {
-    await getDataPredict();
+    await getDataMonitoring(currPredictDate.value);
+    // $q.loading.hide();
   }
 };
 
@@ -378,6 +387,8 @@ onMounted(() => {
     bindMap();
   }
 });
+
+watch(predictMode, loadData);
 </script>
 
 <template>
@@ -386,7 +397,12 @@ onMounted(() => {
     :incident-id="currIncident!"
     v-model="showIncidentDialog"
   />
-  <IncidentDialog v-model="showIncidentDialog" :incident-id="currIncident!" />
+  <InfoPanel />
+  <PredictMode v-model="predictMode" />
+  <PredictTimeline v-model="currPredictDate" />
+  <LegendWidget />
+  <CreateIncident @click="showIncidentCreateDialog = true" />
+  <IncidentDialog v-model="showIncidentDialog" :incident-id="currIncident" />
   <RighPanel :place-id="currPolygon!" />
   <LeftPanel />
 </template>

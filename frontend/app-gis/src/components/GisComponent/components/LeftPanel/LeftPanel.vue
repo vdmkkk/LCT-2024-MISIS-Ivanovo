@@ -5,7 +5,8 @@ import { useOptionsStore } from 'src/stores/optionsStore';
 import LayersSelect from './components/LayersSelect.vue';
 import ServicesSelect from './components/ServicesSelect.vue';
 import FiltersWidget from './components/FiltersWidget.vue';
-import StatsWidget from './components/StatsWidget.vue';
+import StatsWidget from './components/StatsWidget/StatsWidget.vue';
+import NotificationsWidget from './components/NotificationsWidget.vue';
 
 const optionsStore = useOptionsStore();
 const handleIconClick = optionsStore.setLeftPanelOption;
@@ -24,6 +25,17 @@ const handleIconClick = optionsStore.setLeftPanelOption;
         >location_on</i
       >
       <div class="tooltip">Модуль карты</div>
+    </div>
+
+    <div class="icon-wrapper" @click="handleIconClick('notifications')">
+      <i
+        :class="[
+          'material-symbols-outlined',
+          { selected: optionsStore.leftPanelOption === 'notifications' },
+        ]"
+        >notifications_unread</i
+      >
+      <div class="tooltip">Уведомления</div>
     </div>
 
     <div class="icon-wrapper" @click="handleIconClick('chart')">
@@ -63,6 +75,7 @@ const handleIconClick = optionsStore.setLeftPanelOption;
   <ServicesSelect />
   <FiltersWidget />
   <StatsWidget />
+  <NotificationsWidget />
 </template>
 
 <style scoped lang="scss">
@@ -108,6 +121,27 @@ const handleIconClick = optionsStore.setLeftPanelOption;
 }
 
 .material-icons:hover {
+  background-color: #d0d0d0; /* Darker background on hover */
+}
+
+.material-symbols-outlined {
+  font-size: 24px;
+  color: #000;
+  padding: 10px;
+  margin: 8px;
+  border-radius: 100%;
+  transition: background-color 0.3s ease; /* Smooth transition for background color */
+}
+
+.material-symbols-outlined.selected {
+  color: #a90028;
+}
+
+.material-symbols-outlined.selected:hover {
+  background-color: rgb(247, 201, 193);
+}
+
+.material-symbols-outlined:hover {
   background-color: #d0d0d0; /* Darker background on hover */
 }
 
