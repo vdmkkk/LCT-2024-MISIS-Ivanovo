@@ -19,7 +19,7 @@ const keys = {
       'Тип номера дом': 'house_number_type',
       'Номер дома': 'house_number',
       'Номер корпуса': 'building_number',
-      'Тип номера строения/соор��жения': 'structure_number_type',
+      'Тип номера строения/сооружения': 'structure_number_type',
       'Номер строения': 'structure_number',
       'Муниципальный округ_1': 'municipal_district_1',
       ADDRESS_x: 'address_x',
@@ -29,7 +29,7 @@ const keys = {
       'Наименование элемента планировочной структуры или улично-дорожной сети':
         'planning_element_name',
     },
-    logo: 'home_pin',
+    logo: 'location_city',
   },
   'Идентификатор и УНОМ': {
     list: {
@@ -47,7 +47,7 @@ const keys = {
       'Общая площадь': 'total_area',
       'Общая площадь жилых помещений': 'total_residential_area',
       'Общая площадь нежилых помещений': 'total_non_residential_area',
-      'Износ объект�� (по БТИ)': 'wear_and_tear',
+      'Износ объекта (по БТИ)': 'wear_and_tear_bti',
       'Материалы стен': 'wall_materials',
       'Признак аварийности здания': 'emergency_status',
       'Количество пассажирских лифтов': 'number_of_passenger_elevators',
@@ -55,7 +55,7 @@ const keys = {
       'Очередность уборки кровли': 'roof_cleaning_priority',
       'Материалы кровли по БТИ': 'roof_materials',
       Материал: 'material',
-      OBJ_TYPE: 'obj_type',
+      OBJ_TYPE: 'object_type',
     },
     logo: 'tune',
   },
@@ -64,11 +64,11 @@ const keys = {
       'Типы жилищного фонда': 'housing_fund_types',
       'Статусы МКД': 'mkd_statuses',
       Потребители: 'consumers',
-      Группа: 'group',
+      Группа: 'group_type',
       'Центральное отопление(контур)': 'central_heating',
       'Марка счетчика': 'meter_brand',
       'Серия/Номер счетчика': 'meter_serial_number',
-      'ID УУ': 'id_uu',
+      'ID УУ': 'iduu',
       '№ п/п': 'serial_number',
       Признак: 'sign',
       Назначение: 'purpose',
@@ -86,7 +86,7 @@ const keys = {
   },
   ОДС: {
     list: {
-      'ID ODS': 'id_ods',
+      'ID ODS': 'idods',
       PHONE_NUMBER: 'phone_number',
       '№ ОДС': 'ods_number',
       'Адрес ОДС': 'ods_address',
@@ -106,15 +106,15 @@ const keys = {
       UNAD: 'unad',
       NREG: 'nreg',
       DREG: 'dreg',
-      N_FIAS: 'n_fias',
-      D_FIAS: 'd_fias',
-      KAD_N: 'kad_n',
-      KAD_ZU: 'kad_zu',
+      N_FIAS: 'nfias',
+      D_FIAS: 'dfias',
+      KAD_N: 'kadn',
+      KAD_ZU: 'kadzu',
       KLADR: 'kladr',
       TDOC: 'tdoc',
       NDOC: 'ndoc',
       DDOC: 'ddoc',
-      ADR_TYPE: 'adr_type',
+      ADR_TYPE: 'addr_type',
       VID: 'vid',
       SOSTAD: 'sostad',
       STATUS: 'status',
@@ -128,12 +128,23 @@ const keys = {
   <div class="passport-container">
     <h1>Паспорт</h1>
     <div v-for="[caregory, objects] in Object.entries(keys)" :key="caregory">
-      <h2>{{ caregory }}</h2>
+      <div style="display: flex; gap: 10px; margin-top: 30px;">
+        <i class="material-icons">{{ objects.logo }}</i>
+        <h2>{{ caregory }}</h2>
+      </div>
       <div v-for="[title, value] in Object.entries(objects.list)" :key="title">
-        <h3>
-          <b>{{ title }}:</b>
-          {{ props.object ? props.object[value] : '' }}
+        <h3 v-if="props.object && props.object[value] !== null && props.object[value] !== ''">
+          <div style="display: flex;">
+            <div style="width: 50%;">
+              <b>{{ title }}:</b>
+            </div>
+            <div style="width: 50%;">
+              {{ props.object[value] }}
+            </div>
+          </div>
         </h3>
+
+
       </div>
     </div>
   </div>
@@ -156,12 +167,20 @@ const keys = {
   h2 {
     font-size: 1.7em;
     font-size: 600;
+    font-weight: 400;
     margin: 0;
     line-height: normal;
   }
 
   h3 {
-    font-size: 1em;
+    font-size: 1.3em;
+    line-height: 1.3em;
+    padding-top: .2em;
+    padding-bottom: .2em;
+  }
+
+  .material-icons {
+    font-size: 28px;
   }
 }
 </style>

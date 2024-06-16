@@ -19,6 +19,7 @@ const options: { key: MapMode; value: string }[] = [
 const selectOption = (val: MapMode) => {
   optionsStore.setMapMode(val);
   optionsStore.setLeftPanelOption(null);
+  optionsStore.setRightPanelOption('passport');
 };
 </script>
 
