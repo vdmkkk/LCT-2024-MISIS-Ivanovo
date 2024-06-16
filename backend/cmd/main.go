@@ -16,6 +16,8 @@ func main() {
 		errorLogFile.Close()
 	}()
 
+	// TODO: startup things
+
 	db := database.MustGetDB()
 
 	delivery.Start(db, logger)

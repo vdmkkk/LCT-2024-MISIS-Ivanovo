@@ -15,8 +15,6 @@ import openpyxl
 import os
 import ast
 
-# TODO: сделать чтобы писало какой не хватает колонки
-
 app = FastAPI()
 
 app.add_middleware(
@@ -719,6 +717,233 @@ async def upload_file_aggregated(
         raise HTTPException(status_code=500, detail=f"Error deleting file: {e}")
 
     return {"filename": file_name}
+
+
+@app.post("/upload_file/aggregated")
+async def upload_file_aggregated(
+        table_8: UploadFile = File(...),
+        table_9: UploadFile = File(...),
+        table_13: UploadFile = File(...),
+        table_14: UploadFile = File(...),
+        table_11: UploadFile = File(...),
+        table_12: UploadFile = File(...)
+):
+    files = {"table_8": table_8, "table_9": table_9, "table_13": table_13,
+             "table_14": table_14, "table_11": table_11, "table_12": table_12}
+    for file_name in files.keys():
+        file = files[file_name]
+        if file.content_type != 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+            return {"error": "Invalid file type. Please upload an XLSX file."}
+
+    for file_name in files.keys():
+        contents = await files[file_name].read()
+
+        file_path = f"{file_name}.xlsx"
+        with open(file_path, "wb") as f:
+            f.write(contents)
+
+    file_path = process_tables("table_8.xlsx", "table_9.xlsx", "table_13.xlsx",
+                               "table_14.xlsx", "table_11.xlsx", "table_12.xlsx")
+
+    df = pd.read_csv(file_path)
+
+    file_name = 'aggregared_processed.csv'
+
+    df = df.rename(columns={
+        'Адрес из сторонней системы': 'external_system_address',
+        'Адрес по БТИ': 'bti_address',
+        'Округ': 'district',
+        'Район': 'area',
+        'Серии проектов': 'project_series',
+        'Количество этажей': 'number_of_floors',
+        'Количество подъездов': 'number_of_entrances',
+        'Количество квартир': 'number_of_apartments',
+        'Общая площадь': 'total_area',
+        'Общая площадь жилых помещений': 'total_residential_area',
+        'Общая площадь нежилых помещений': 'total_non_residential_area',
+        'Износ объекта (по БТИ)': 'wear_and_tear_bti',
+        'Материалы стен': 'wall_materials',
+        'Признак аварийности здания': 'emergency_status',
+        'Количество пассажирских лифтов': 'number_of_passenger_elevators',
+        'Количество грузопассажирских лифтов': 'number_of_freight_elevators',
+        'Очередность уборки кровли': 'roof_cleaning_priority',
+        'Материалы кровли по БТИ': 'roof_materials',
+        'Типы жилищного фонда': 'housing_fund_types',
+        'Статусы МКД': 'mkd_statuses',
+        'Потребители': 'consumers',
+        'Группа': 'group_type',
+        'Центральное отопление(контур)': 'central_heating',
+        'Марка счетчика ': 'meter_brand',
+        'Серия/Номер счетчика': 'meter_serial_number',
+        'ID УУ': 'id_uu',
+        'Полный адрес': 'full_address',
+        '№ ОДС': 'ods_number',
+        'Адрес ОДС': 'ods_address',
+        'ЦТП': 'ctp',
+        '№ п/п': 'serial_number',
+        'Город': 'city',
+        'Административный округ': 'administrative_district',
+        'Муниципальный округ': 'municipal_district',
+        'Населенный пункт': 'locality',
+        'Улица': 'street',
+        'Тип номера дом': 'house_number_type',
+        'Номер дома': 'house_number',
+        'Номер корпуса': 'building_number',
+        'Тип номера строения/сооружения': 'structure_number_type',
+        'Номер строения': 'structure_number',
+        'UNAD': 'unad',
+        'Материал': 'material',
+        'Назначение': 'purpose',
+        'Класс': 'class',
+        'Тип': 'type',
+        'Признак': 'sign',
+        'global_id': 'global_id',
+        'OBJ_TYPE': 'obj_type',
+        'ADDRESS_x': 'address_x',
+        'Муниципальный округ.1': 'municipal_district_1',
+        'Наименование элемента планировочной структуры или улично-дорожной сети': 'planning_element_name',
+        'Тип номера дома, владения, участка': 'house_ownership_number_type',
+        'Внутригородская территория': 'intra_city_area',
+        'ADM_AREA': 'adm_area',
+        'DISTRICT': 'district_1',
+        'NREG': 'nreg',
+        'DREG': 'dreg',
+        'N_FIAS': 'n_fias',
+        'D_FIAS': 'd_fias',
+        'KAD_N': 'kad_n',
+        'KAD_ZU': 'kad_zu',
+        'KLADR': 'kladr',
+        'TDOC': 'tdoc',
+        'NDOC': 'ndoc',
+        'DDOC': 'ddoc',
+        'ADR_TYPE': 'adr_type',
+        'VID': 'vid',
+        'SOSTAD': 'sostad',
+        'STATUS': 'status',
+        'geoData': 'geo_data',
+        'geodata_center': 'geo_data_center',
+        'ID ODS': 'id_ods',
+        'PHONE_NUMBER': 'phone_number',
+        'Класс энергоэффективности здания': 'energy_efficiency_class',
+        'Телефон': 'phone_number_new',
+        'Режим работы': 'work_hours'
+    })
+
+    correct_order = [
+        'unom',
+        'ctp',
+        'external_system_address',
+        'bti_address',
+        'district',
+        'area',
+        'project_series',
+        'number_of_floors',
+        'number_of_entrances',
+        'number_of_apartments',
+        'total_area',
+        'total_residential_area',
+        'total_non_residential_area',
+        'wear_and_tear_bti',
+        'wall_materials',
+        'emergency_status',
+        'number_of_passenger_elevators',
+        'number_of_freight_elevators',
+        'roof_cleaning_priority',
+        'roof_materials',
+        'housing_fund_types',
+        'mkd_statuses',
+        'consumers',
+        'group_type',
+        'central_heating',
+        'meter_brand',
+        'meter_serial_number',
+        'id_uu',
+        'full_address',
+        'ods_number',
+        'ods_address',
+        'serial_number',
+        'city',
+        'administrative_district',
+        'municipal_district',
+        'locality',
+        'street',
+        'house_number_type',
+        'house_number',
+        'building_number',
+        'structure_number_type',
+        'structure_number',
+        'unad',
+        'material',
+        'purpose',
+        'class',
+        'type',
+        'sign',
+        'global_id',
+        'obj_type',
+        'address_x',
+        'planning_element_name',
+        'house_ownership_number_type',
+        'intra_city_area',
+        'adm_area',
+        'district_1',
+        'nreg',
+        'dreg',
+        'n_fias',
+        'd_fias',
+        'kad_n',
+        'kad_zu',
+        'kladr',
+        'tdoc',
+        'ndoc',
+        'ddoc',
+        'adr_type',
+        'vid',
+        'sostad',
+        'status',
+        'geo_data',
+        'geo_data_center',
+        'id_ods',
+        'phone_number',
+        'energy_efficiency_class',
+        'phone_number_new',
+        'work_hours'
+    ]
+
+    df = df[correct_order]
+
+    df = df.dropna(subset=['unom'])
+    df['unom'] = df['unom'].apply(lambda x: int(str(x).replace('.0', '')))
+    df['geo_data'] = df['geo_data'].apply(lambda x: tr(x) if x else None)
+    df['geo_data_center'] = df['geo_data_center'].apply(lambda x: tr(x) if x else None)
+
+    df = df.drop_duplicates(subset=['unom'], keep='first')
+
+    missing_columns = set(correct_order) - set(df.columns)
+    if missing_columns:
+        raise HTTPException(status_code=400, detail=f"Отсутствуют столбцы: {missing_columns}")
+
+    df.to_csv(file_name, index=False, sep=',', encoding='utf-8')
+
+    load_csv_to_db(file_name, 'buildings')
+
+    try:
+        os.remove(file_path)
+    except OSError as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting file: {e}")
+    try:
+        os.remove(file_name)
+    except OSError as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting file: {e}")
+
+    return {"filename": file_name}
+
+
+@app.post("/upload_file/tecs")
+async def upload_file_aggregated():
+    file_path = "tecs_table.csv"
+    load_csv_to_db(file_path, 'tecs')
+
+    return {"status": "success!"}
 
 
 if __name__ == "__main__":
