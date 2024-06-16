@@ -146,9 +146,18 @@ var industrial = []string{
 
 func (g geoDataRepo) GetByFiltersWithBuildings(ctx context.Context, filters models.GeoDataFilter) (map[string]map[string]models.ResultGeoData, error) {
 	psql := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
-	queryBuilder := psql.Select("b.area", "b.unom", "to_json(b.geo_data)", "c.ctp_id", "c.source",
-		"to_json(c.center)", "t.name", "t.address", "t.phone_number", "to_json(t.coordinates)").
-		From("buildings b").LeftJoin("ctps c on b.ctp = c.ctp_id").LeftJoin("tecs t on c.source = t.name")
+
+	var queryBuilder squirrel.SelectBuilder
+	switch filters.Date {
+	case "":
+		queryBuilder = psql.Select("b.area", "b.unom", "to_json(b.geo_data)", "c.ctp_id", "c.source",
+			"to_json(c.center)", "t.name", "t.address", "t.phone_number", "to_json(t.coordinates)").
+			From("buildings b").LeftJoin("ctps c on b.ctp = c.ctp_id").LeftJoin("tecs t on c.source = t.name")
+	default:
+		queryBuilder = psql.Select("b.area", "b.unom", "to_json(b.geo_data)", "c.ctp_id", "c.source",
+			"to_json(c.center)", "t.name", "t.address", "t.phone_number", "to_json(t.coordinates)", "to_json(mlp.probabilites)").
+			From("buildings b").LeftJoin("ctps c on b.ctp = c.ctp_id").LeftJoin("tecs t on c.source = t.name").LeftJoin("ml_predict mlp ON b.unom = mlp.unom AND mlp.datetime = ?", filters.Date)
+	}
 
 	switch filters.HeatNetwork {
 	case 1:
@@ -205,9 +214,16 @@ func (g geoDataRepo) GetByFiltersWithBuildings(ctx context.Context, filters mode
 		var coordinatesJSON []byte
 		var centerJSON []byte
 		var tecCoordinatesJSON []byte
+		var probabilitiesJSON []byte
 
-		err = rows.Scan(&buildingGeo.Area, &buildingGeo.Unom, &coordinatesJSON, &ctpGeo.CtpID, &ctpGeo.Source, &centerJSON,
-			&tec.Name, &tec.Address, &tec.PhoneNumber, &tecCoordinatesJSON)
+		if filters.Date != "" {
+			err = rows.Scan(&buildingGeo.Area, &buildingGeo.Unom, &coordinatesJSON, &ctpGeo.CtpID, &ctpGeo.Source, &centerJSON,
+				&tec.Name, &tec.Address, &tec.PhoneNumber, &tecCoordinatesJSON, &probabilitiesJSON)
+		} else {
+			err = rows.Scan(&buildingGeo.Area, &buildingGeo.Unom, &coordinatesJSON, &ctpGeo.CtpID, &ctpGeo.Source, &centerJSON,
+				&tec.Name, &tec.Address, &tec.PhoneNumber, &tecCoordinatesJSON)
+		}
+
 		if err != nil {
 			return nil, err
 		}
@@ -247,12 +263,19 @@ func (g geoDataRepo) GetByFiltersWithBuildings(ctx context.Context, filters mode
 			}
 		}
 
-		if filters.Date != "" {
-			buildingGeo.Probabilites, err = g.mlPredict.GetByUNOMAndDate(ctx, buildingGeo.Unom, filters.Date)
+		if probabilitiesJSON != nil {
+			err = json.Unmarshal(probabilitiesJSON, &buildingGeo.Probabilites)
 			if err != nil {
 				return nil, err
 			}
 		}
+
+		//if filters.Date != "" {
+		//	buildingGeo.Probabilites, err = g.mlPredict.GetByUNOMAndDate(ctx, buildingGeo.Unom, filters.Date)
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//}
 
 		var outerKey string
 		if !filters.Tec || !filters.District {
