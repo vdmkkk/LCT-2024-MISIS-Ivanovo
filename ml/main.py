@@ -37,7 +37,7 @@ warnings.filterwarnings("ignore")
 app = FastAPI()
 
 model = CatBoostClassifier()
-model.load_model('model_task1')
+model.load_model('./models/model_task1')
 
 
 def authorize(token: str) -> bool:
