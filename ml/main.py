@@ -36,7 +36,6 @@ warnings.filterwarnings("ignore")
 
 app = FastAPI()
 
-
 model = CatBoostClassifier()
 model.load_model('model_task1')
 
@@ -1443,6 +1442,7 @@ class CatBoostModel:
             print(f"Ошибка при подключении к базе данных: {e}")
             return None
 
+
     def prepare_one_data_sample(self, unom, t_in, t_outside):
         """
         Подготаливает данные для одного образца для модели на основе входных параметров.
@@ -1562,34 +1562,13 @@ class CatBoostModel:
                 for old_key, new_key in zip(data_dict.keys(), new_keys):
                     new_dict[new_key] = data_dict[old_key]
 
-                apartment_tags = ['многоквартирный дом', 'блокированный жилой дом', 'общежитие', 'спальный корпус',
-                                  'гараж', 'дом ребенка', 'интернат', 'гостиница']
-                social_tags = ['школа', 'библиотека', 'музей', 'детский сад', 'колледж', 'больница', 'родильный дом',
-                               'поликлиника', 'ясли-сад', 'медучилище', 'дом детского творчества', 'музыкальная школа',
-                               'школа-интернат', 'гимназия', 'лечебный корпус', 'санаторий', 'центр реабилитации',
-                               'спецшкола', 'училище', 'лечебное', 'учебное', 'учебно-производственный комбинат',
-                               'культурно-просветительное', 'техническое училище', 'техникум', 'школа-сад',
-                               'детские ясли', 'станция скорой помощи', 'спортивная школа', 'наркологический диспансер',
-                               'профтехучилище', 'спортивный клуб', 'лаборатория', 'детский санаторий', 'диспансер',
-                               'дворец пионеров', 'детсад-ясли', 'детский дом культуры', 'ясли',
-                               'физкультурно-оздоровительный комплекс', 'клуб', 'бассейн и спортзал',
-                               'спортивный корпус', 'детское дошкольное учреждение', 'подстанция скорой помощи',
-                               'блок-пристройка начальных классов', 'спортивное', 'кафе', 'столовая',
-                               'центр обслуживания']
-                industrial_tags = ['трансформаторная подстанция', 'нежилое', 'выставочный павильон',
-                                   'кухня клиническая', 'хозблок', 'овощехранилище', 'учреждение',
-                                   'хирургический корпус', 'морг', 'пищеблок', 'учебно-воспитателный комбинат',
-                                   'учреждение,мастерские', 'дезинфекционная камера',
-                                   'отделение судебно-медицинской экспертизы', 'пункт охраны', 'учебный корпус',
-                                   'плавательный бассейн', 'хранилище', 'административное', 'научное', 'архив',
-                                   'учебно-воспитательное', 'терапевтический корпус', 'учебное',
-                                   'административно-бытовой']
+                apartment_tags = ['многоквартирный дом', 'блокированный жилой дом', 'общежитие', 'спальный корпус', 'гараж', 'дом ребенка', 'интернат', 'гостиница']
+                social_tags = ['школа', 'библиотека', 'музей', 'детский сад', 'колледж', 'больница', 'родильный дом', 'поликлиника', 'ясли-сад', 'медучилище', 'дом детского творчества', 'музыкальная школа', 'школа-интернат', 'гимназия', 'лечебный корпус', 'санаторий', 'центр реабилитации', 'спецшкола', 'училище', 'лечебное', 'учебное', 'учебно-производственный комбинат', 'культурно-просветительное', 'техническое училище', 'техникум', 'школа-сад', 'детские ясли', 'станция скорой помощи', 'спортивная школа', 'наркологический диспансер', 'профтехучилище', 'спортивный клуб', 'лаборатория', 'детский санаторий', 'диспансер', 'дворец пионеров', 'детсад-ясли', 'детский дом культуры', 'ясли', 'физкультурно-оздоровительный комплекс', 'клуб', 'бассейн и спортзал', 'спортивный корпус', 'детское дошкольное учреждение', 'подстанция скорой помощи', 'блок-пристройка начальных классов', 'спортивное', 'кафе', 'столовая', 'центр обслуживания']
+                industrial_tags = ['трансформаторная подстанция', 'нежилое', 'выставочный павильон', 'кухня клиническая', 'хозблок', 'овощехранилище', 'учреждение', 'хирургический корпус', 'морг', 'пищеблок', 'учебно-воспитателный комбинат', 'учреждение,мастерские', 'дезинфекционная камера', 'отделение судебно-медицинской экспертизы', 'пункт охраны', 'учебный корпус', 'плавательный бассейн', 'хранилище', 'административное', 'научное', 'архив', 'учебно-воспитательное', 'терапевтический корпус', 'учебное', 'административно-бытовой']
 
                 energy_efficiency = new_dict['Класс энергоэффективности здания']
-                energy_efficiency_mapping = {'A++': 2, 'A+': 3, 'A': 4, 'B': 5, 'C': 6, 'D': 7, 'E': 8, 'F': 9,
-                                             'G': 10}  # Словарь для сопоставления уровня энергоэффективности с числовым значением
-                efficiency_weight = energy_efficiency_mapping.get(energy_efficiency,
-                                                                  1)  # По умолчанию, если энергоэффективность неизвестна или некорректна
+                energy_efficiency_mapping = {'A++': 2, 'A+': 3, 'A': 4, 'B': 5, 'C': 6, 'D': 7, 'E': 8, 'F': 9, 'G': 10}  # Словарь для сопоставления уровня энергоэффективности с числовым значением
+                efficiency_weight = energy_efficiency_mapping.get(energy_efficiency, 1)  # По умолчанию, если энергоэффективность неизвестна или некорректна
 
                 # Определение весов категорий
                 purpose_weight = new_dict.get(new_dict['Назначение'], "многоквартирный дом")
@@ -1603,10 +1582,8 @@ class CatBoostModel:
                 # Определение весов режима работы
 
                 working_time = new_dict['Режим работы']
-                working_time_mapping = {'Круглосуточно': 3, '9:00 - 21:00': 2,
-                                        '9:00 – 18:00': 1}  # Словарь для сопоставления уровня энергоэффективности с числовым значением
-                working_weight = working_time_mapping.get(working_time,
-                                                          1)  # По умолчанию, если энергоэффективность неизвестна или некорректна
+                working_time_mapping = {'Круглосуточно': 3, '9:00 - 21:00': 2, '9:00 – 18:00': 1}  # Словарь для сопоставления уровня энергоэффективности с числовым значением
+                working_weight = working_time_mapping.get(working_time, 1)  # По умолчанию, если энергоэффективность неизвестна или некорректна
 
                 if hours <= 2:
                     # приоритет максимальный (1)
@@ -1618,8 +1595,10 @@ class CatBoostModel:
                 return None
 
         except Exception as e:
-            print(f"Ошибка при подключении к базе данных: {e}")
-            return None
+                print(f"Ошибка при подключении к базе данных: {e}")
+                return None
+
+
 
     def get_final_ranking(self, data_from_request):
         """
@@ -1664,53 +1643,64 @@ class CatBoostModel:
 
         return df_sorted
 
-
-def get_current_temperature():
+def get_current_inside_temperature():
     """
     Функция для получения прогноза погоды от Яндекс.Погоды по координатам.
     :param lat: Широта
     :param lon: Долгота
     :return: Прогноз погоды
     """
-    url = f'https://api.weather.yandex.ru/v2/forecast?lat=55.787715&lon=37.775631'
-    headers = {'X-Yandex-Weather-Key': "83f2c69f-542f-4a2a-b1dc-b32b2d01e7ac"}
+    # url = f'https://api.weather.yandex.ru/v2/forecast?lat=55.787715&lon=37.775631'
+    # headers = {'X-Yandex-Weather-Key': "0281e1b2-1d86-4735-a2b6-6a77b605fb86"}
 
-    response = requests.get(url, headers=headers)
+    # response = requests.get(url, headers=headers)
 
-    if response.status_code == 200:
-        return response.json()["fact"]["temp"]
-    else:
-        print(f"Ошибка при запросе: {response.status_code}")
-        return None
+    # if response.status_code == 200:
+    #     return response.json()["fact"]["temp"]
+    # else:
+    #     print(f"Ошибка при запросе: {response.status_code}")
+    #     return None
+    return 22
 
 
-def get_future_temperature():
+def get_weather_forecast():
     """
     Функция для получения прогноза погоды от Яндекс.Погоды по координатам.
     :param lat: Широта
     :param lon: Долгота
     :return: Прогноз погоды
     """
+
     # Получаем текущую дату и время
-    now = int(get_current_temperature())
+    # now = int(get_current_inside_temperature())
 
-    url = f'https://api.weather.yandex.ru/v2/forecast?lat=55.787715&lon=37.775631'
-    headers = {'X-Yandex-Weather-Key': "83f2c69f-542f-4a2a-b1dc-b32b2d01e7ac"}
+    # url = f'https://api.weather.yandex.ru/v2/forecast?lat=55.787715&lon=37.775631'
+    # headers = {'X-Yandex-Weather-Key': "0281e1b2-1d86-4735-a2b6-6a77b605fb86"}
 
-    response = requests.get(url, headers=headers)
+    # response = requests.get(url, headers=headers)
 
-    if response.status_code == 200:
-        return {
-            't_in_5_hours': now,
-            't_in_10_hours': now,
-            't_in_15_hours': now,
-            't_in_20_hours': now,
-            't_in_25_hours': now,
-            't_in_30_hours': now
+    # if response.status_code == 200:
+    #     return {
+    #         't_in_5_hours': now,
+    #         't_in_10_hours': now,
+    #         't_in_15_hours': now,
+    #         't_in_20_hours': now,
+    #         't_in_25_hours': now,
+    #         't_in_30_hours': now
+    #     }
+    # else:
+    #     print(f"Ошибка при запросе: {response.status_code}")
+    #     return None
+    weather = pd.read_csv("weather_forecast.csv")
+    weather_forecast = weather['temperature'].head(6).tolist()
+    return {
+            't_in_5_hours': weather_forecast[0],
+            't_in_10_hours': weather_forecast[1],
+            't_in_15_hours': weather_forecast[2],
+            't_in_20_hours': weather_forecast[3],
+            't_in_25_hours': weather_forecast[4],
+            't_in_30_hours': weather_forecast[5]
         }
-    else:
-        print(f"Ошибка при запросе: {response.status_code}")
-        return None
 
 
 def connect_to_db():
@@ -1737,10 +1727,9 @@ def read_data_from_db(conn):
         print(f"Ошибка при выполнении запроса: {e}")
         return None
 
-
 @app.post("/calc_cooldown/")
 async def calc_cooldown(unoms: List[int]):
-    """
+        """
         Ручка для получение ранжированного списка остывающих объектов
 
         Аргументы:
@@ -1752,33 +1741,32 @@ async def calc_cooldown(unoms: List[int]):
                           Значения в столбце 'Rank' нормализованы в диапазоне от 1 до 3,
                           где 1 - максимальный приоритет.
         """
-    unoms = [int(unom) for unom in unoms]
-    conn = connect_to_db()
-    if not conn:
-        raise HTTPException(status_code=500, detail="Не удалось подключиться к базе данных")
+        unoms = [int(unom) for unom in unoms]
+        conn = connect_to_db()
+        if not conn:
+            raise HTTPException(status_code=500, detail="Не удалось подключиться к базе данных")
 
-    try:
-        # Считываем данные в DataFrame
-        database = read_data_from_db(conn)
+        try:
+            # Считываем данные в DataFrame
+            database = read_data_from_db(conn)
 
-        if database is None:
-            raise HTTPException(status_code=500, detail="Ошибка при считывании данных из базы данных")
+            if database is None:
+                raise HTTPException(status_code=500, detail="Ошибка при считывании данных из базы данных")
 
-        t_inside = [get_current_temperature()] * len(unoms)
-        t_outside = get_future_temperature()
+            t_inside = [get_current_inside_temperature()] * len(unoms)
+            t_outside = get_weather_forecast()
 
-        # Получаем предсказания
-        catboost_model = CatBoostModel(database, type_description_dict, material_parameters_dict,
-                                       model_path='catboost.cbm')
-        data_for_catboost = catboost_model.prepare_data_for_catboost(unoms, t_inside, t_outside)
-        catboost_predictions = catboost_model.get_catboost_predictions(data_for_catboost)
-        df_sorted = catboost_model.get_final_ranking(catboost_predictions)
+            # Получаем предсказания
+            catboost_model = CatBoostModel(database, type_description_dict, material_parameters_dict, model_path='catboost_for_house_cooling.cbm')
+            data_for_catboost = catboost_model.prepare_data_for_catboost(unoms, t_inside, t_outside)
+            catboost_predictions = catboost_model.get_catboost_predictions(data_for_catboost)
+            df_sorted = catboost_model.get_final_ranking(catboost_predictions)
 
-        return df_sorted.to_dict(orient='records')
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        conn.close()
+            return df_sorted.to_dict(orient='records')
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            conn.close()
 
 
 type_description_file_path = "type_descriptions.json"
@@ -1789,6 +1777,7 @@ with open(type_description_file_path, 'r', encoding='utf-8') as file:
 
 with open(material_parameters_file_path, 'r', encoding='utf-8') as file:
     material_parameters_dict = json.load(file)
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
