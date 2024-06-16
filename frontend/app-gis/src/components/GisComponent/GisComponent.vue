@@ -7,6 +7,7 @@ import LeftPanel from './components/LeftPanel/LeftPanel.vue';
 import getAllIncidents from 'src/api/getAllIncidents';
 
 import { useOptionsStore } from 'src/stores/optionsStore';
+import getStats from 'src/api/getStats';
 
 import { useQuasar } from 'quasar';
 import getGeoByFilters from 'src/api/getGeoByFilters';
@@ -275,6 +276,15 @@ const handleBuildingRender = (buidlings: GeoType3, predictDate: string) => {
 
 onMounted(() => {
   loadData();
+  getStats()
+    .then((res) => {
+      distributionData.value = res['event_counts'];
+      tasksData.value = {
+        // @ts-ignore //
+        'Без событий': res['n_unoms_without_events'],
+      };
+    })
+    .then();
 });
 
 const getDataMonitoring = async (predictDate = '') => {
@@ -504,6 +514,12 @@ watch(incidentMode, () => {
     });
   }
 });
+
+
+const distributionData = ref<Map<string, number[]>>();
+const tasksData = ref<Map<string, number[]>>();
+
+
 </script>
 
 <template>
@@ -512,7 +528,7 @@ watch(incidentMode, () => {
     :incident-id="currIncident!"
     v-model="showIncidentDialog"
   />
-  <InfoPanel />
+  <InfoPanel :data="tasksData!" />
   <PredictMode v-model="predictMode" />
   <IncidentMode :shown="currIncident" v-model="incidentMode" />
   <PredictTimeline v-model="currPredictDate" />
