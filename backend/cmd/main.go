@@ -65,8 +65,8 @@ func main() {
 
 	db := database.MustGetDB()
 
-	applyMigrations(db)
-	loadTecs()
+	//applyMigrations(db)
+	//loadTecs()
 
 	delivery.Start(db, logger)
 }

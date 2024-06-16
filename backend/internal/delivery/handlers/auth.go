@@ -27,6 +27,7 @@ func (a AuthHandler) Login(c *gin.Context) {
 	password := c.Query("password")
 	if login != "admin" || password != "admin" {
 		c.JSON(http.StatusUnauthorized, gin.H{"detail": "wrong password or login"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"JWT": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjIxNDM4NzcsIklEIjoxLCJVc2VyVHlwZSI6IiJ9.4Dvv-2I4sFpwsBMEJA3HTjyh8PrbEtfgXikDx54xXog"})

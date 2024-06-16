@@ -633,14 +633,14 @@ const docTemplate = `{
                 "summary": "Login",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "login",
                         "name": "login",
                         "in": "query",
                         "required": true
                     },
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "password",
                         "name": "password",
                         "in": "query",

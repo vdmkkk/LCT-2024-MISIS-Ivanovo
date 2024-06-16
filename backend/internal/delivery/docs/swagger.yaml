@@ -499,12 +499,12 @@ paths:
         in: query
         name: login
         required: true
-        type: integer
+        type: string
       - description: password
         in: query
         name: password
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
