@@ -56,7 +56,7 @@ const areaPolygonsRef = ref<google.maps.Polygon[]>([]);
 const currPolygon = ref<number | null>();
 const currIncident = ref<number | null>();
 const currMarker = ref<string | number | null>();
-const currPredictDate = ref('2024-04-01T00:00:00');
+const currPredictDate = ref(process.env.VUE_APP_START_DATE);
 const predictMode = ref(0);
 const incidentMode = ref(0);
 const optionsStore = useOptionsStore();
@@ -131,7 +131,7 @@ const handleMarkers = (type: 'ctp' | 'tec', ctps: any) => {
         icon: {
           // @ts-ignore //
           url: imageTable[`${type}${currMarker.value == i ? '_active' : ''}`],
-          scaledSize: new window.google.maps.Size(40, 40),
+          scaledSize: new window.google.maps.Size(26, 26),
         },
       });
 
@@ -215,7 +215,7 @@ const updateMarkers = () => {
                 : ''
             }`
           ],
-          scaledSize: new window.google.maps.Size(40, 40),
+          scaledSize: new window.google.maps.Size(26, 26),
         });
     });
   }
@@ -365,8 +365,15 @@ const handleMarkersIncident = (incidents: any) => {
 
   const newMarkers = [];
   for (let i = 0; i < incidents.length; i++) {
-    const { ctp_id, coordinates: position, id, handled_unoms } = incidents[i];
-    if (position) {
+    const {
+      ctp_id,
+      coordinates: position,
+      id,
+      handled_unoms,
+      payload,
+    } = incidents[i];
+
+    if (position && payload['date_end'] === '') {
       const marker = new google.maps.Marker({
         position: { lat: position[1], lng: position[0] },
         title: `Инцидент #${id}`,
@@ -377,7 +384,7 @@ const handleMarkersIncident = (incidents: any) => {
               currMarker.value == i ? '_active' : ''
             }`
           ],
-          scaledSize: new window.google.maps.Size(40, 40),
+          scaledSize: new window.google.maps.Size(26, 26),
         },
       });
 

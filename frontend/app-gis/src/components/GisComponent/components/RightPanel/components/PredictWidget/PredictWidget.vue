@@ -1,6 +1,7 @@
 <script setup lang="ts">
+// @ts-nocheck //
 import getPredictsByUnom from 'src/api/getPredictsForUnom';
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, reactive, watch, computed } from 'vue';
 import LineChartAllEvents from './components/LineChartAllEvents.vue';
 import LineChartOnlyOk from './components/LineChartOnlyOk.vue';
 
@@ -8,14 +9,24 @@ const props = defineProps<{
   object: Map<string, any>;
 }>();
 
-const data = ref();
-onMounted(() => {
-  // @ts-ignore //
+const loadData = () => {
   getPredictsByUnom(props.object['unom']).then((res) => {
     console.log(res);
     data.value = res;
   });
+};
+
+const data = ref();
+onMounted(() => {
+  // @ts-ignore //
+  loadData();
 });
+
+const n = computed(() => {
+  return props.object.unom;
+});
+
+watch(n, loadData);
 </script>
 
 <template>
