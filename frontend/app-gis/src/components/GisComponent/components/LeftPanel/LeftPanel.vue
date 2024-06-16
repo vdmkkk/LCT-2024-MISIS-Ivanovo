@@ -14,7 +14,10 @@ const handleIconClick = optionsStore.setLeftPanelOption;
 
 <template>
   <div class="container">
-    <img src="src/assets/logo.png" class="logo" />
+    <img
+      src="https://psv4.userapi.com/c235131/u346561169/docs/d9/60fd75dba9c7/logo.png?extra=fYAxDgImCxMzs6brwpG1GkhdIy-WgtM05t9DKtPoDtBOh5kF-og1pjyDirBqNRBWdTZG_52W4Zd4LlCXDKTpc6ge12egp4Kk_5dRwv5jZVH9mtnOruOJy2QNz3zqVUxP8KitftsMf6RoulkYKfLBh7wdUg"
+      class="logo"
+    />
 
     <div class="icon-wrapper" @click="handleIconClick('location')">
       <i
