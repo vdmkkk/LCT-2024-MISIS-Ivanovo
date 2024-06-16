@@ -174,7 +174,7 @@ const handleSave = async () => {
 
 <template>
   <q-dialog v-model="showDialog">
-    <q-card style="min-width: 60vw; border-radius: 10px">
+    <q-card style="min-width: 60vw; border-radius: 20px">
       <q-card-section style="display: flex; justify-content: space-between">
         <div class="text-h5">Авария #{{ incidentData.id }}</div>
         <i
@@ -185,22 +185,25 @@ const handleSave = async () => {
         >
       </q-card-section>
 
-      <div style="display: flex; align-items: center">
+      <div style="display: flex; align-items: center; padding:20px; margin-left:12px">
         <div :style="getStatus(incidentClosed)" />
-        <h3 style="margin: 0">
+        <h3 style="margin: 0; margin-left:20px">
           Статус: {{ incidentClosed ? 'Неакивна' : 'Активна' }}
         </h3>
       </div>
 
-      <div class="incidents">
-        <h2>ЦТП: {{ incidentData?.ctp_id }}</h2>
-        <p>ID: {{ incidentData?.id }}</p>
-        <q-input outlined v-model="description" label="Описание" />
-        <div style="display: flex">
-          <p>Закрыть аварию</p>
+      <div class="incidents-dialog">
+        <h2 v-if="incidentData?.ctp_id">ЦТП: {{ incidentData?.ctp_id }}</h2>
+        <h2>ID: {{ incidentData?.id }}</h2>
+        <q-input outlined v-model="description" label="Описание" style="margin-left:16px; margin-right:16px; font-size:16px" />
+        <div style="display: flex; align-items:center; margin-top:20px">
+          <h3 style="margin-top:0px">Закрыть аварию</h3>
           <q-toggle v-model="incidentClosed" />
         </div>
-        <p>Время регистрации</p>
+
+        <div style="display:flex; ">
+        <div>
+        <h3>Время регистрации</h3>
         <div class="q-pa-md" style="max-width: 300px">
           <q-input filled v-model="date_start">
             <template v-slot:prepend>
@@ -240,8 +243,9 @@ const handleSave = async () => {
             </template>
           </q-input>
         </div>
-
-        <p>Время закрытия</p>
+      </div>
+      <div>
+        <h3>Время закрытия</h3>
         <div class="q-pa-md" style="max-width: 300px">
           <q-input :disable="!incidentClosed" filled v-model="date_end">
             <template v-slot:prepend>
@@ -277,18 +281,19 @@ const handleSave = async () => {
             </template>
           </q-input>
         </div>
-        <!-- TODO: Обрезать эту хуиту до 8 знаков  -->
-        <p>
-          Координаты: {{ incidentData?.coordinates[0] }}
-          {{ incidentData?.coordinates[1] }}
-        </p>
+        </div>
+      </div>
+        <h3 style="margin-bottom:20px; margin-top:0px; font-weight:300">
+          <strong style="font-weight:400">Координаты:</strong> {{ incidentData?.coordinates[0].toString().slice(0,8) }}
+          {{ incidentData?.coordinates[1].toString().slice(0,8) }}
+        </h3>
         <h2>Затронутые объекты:</h2>
         <div
           class="handled-unoms"
           v-for="{
             unom: unom,
-            hours_to_cool: hours_to_cool,
-            priority_group: priority_group,
+            hours: hours_to_cool,
+            Rank: priority_group,
           } in incidentData?.handled_unoms"
           :key="unom"
           :style="getPriorityStyles(priority_group)"
@@ -297,24 +302,75 @@ const handleSave = async () => {
           <p>Часов до остывания: {{ hours_to_cool }}</p>
           <p>Приоритет: {{ priority_group }}</p>
         </div>
-        <q-btn :disable="isSaveButtonDisabled" @click="handleSave"
-          >Сохранить</q-btn
-        >
+        <q-btn  :class="{ 'disabled-class': isSaveButtonDisabled, 'enabled-class':!isSaveButtonDisabled }" :disable="isSaveButtonDisabled" @click="handleSave"
+          >Сохранить
+        </q-btn>
+
       </div>
     </q-card>
   </q-dialog>
 </template>
 
 <style scoped lang="scss">
-.incidents {
+.incidents-dialog {
   padding: 10px;
   padding: 16px;
   border-radius: 20px;
+
+  .enabled-class {
+    margin-top:20px; 
+    border-radius:10px; 
+    margin-left:16px; 
+    margin-bottom:4px; 
+    min-width: 200px; 
+    background-color:#dedede;
+    transition: .3s ease;
+  }
+  
+
+  .enabled-class:hover {
+    background-color:#f8f8f8;
+  }
+
+  .disabled-class {
+    margin-top:20px; 
+    border-radius:10px; 
+    margin-left:16px; 
+    margin-bottom:4px; 
+    min-width: 200px; 
+    background-color:#dedede;
+    transition: .3s ease;
+  }
+
+  h2 {
+    font-size:32px;
+    // margin-bottom:0px;
+    margin-top:0px;
+    line-height:32px;
+    margin-left:16px;
+  }
+
+  h3 {
+    font-size:24px;
+    margin-bottom:0px;
+    margin-left:16px;
+    margin-top:10px;
+  }
 
   .handled-unoms {
     border-radius: 20px;
     padding: 10px;
     margin-top: 10px;
+    margin-inline:16px;
+    padding:20px;
+    display:flex;
+    justify-content:space-between;
+
+    p {
+      font-size:20px;
+      margin-bottom:0px;
+      margin-inline:20px;
+    }
   }
 }
 </style>
