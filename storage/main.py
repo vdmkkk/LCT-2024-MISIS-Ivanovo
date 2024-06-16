@@ -33,7 +33,8 @@ DB_USER = os.getenv('DB_USER')
 DB_PASSWORD = os.getenv('DB_PASSWORD')
 DB_PORT = os.getenv('DB_PORT')
 DB_HOST = os.getenv('DB_HOST')
-API_KEY = 'd347483b-506b-451a-8071-87074574be00'
+API_KEY = os.getenv('API_KEY')
+# API_KEY = 'd347483b-506b-451a-8071-87074574be00'
 
 
 def tr(a):
