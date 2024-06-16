@@ -1,19 +1,28 @@
+import math
+
 import pandas as pd
 import datetime
 import json
 import requests
 
-from catboost import CatBoostClassifier
+from catboost import CatBoostClassifier, CatBoostRegressor
 import numpy as np
 import psycopg2
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, status, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import uvicorn
 import warnings
+
+from jwt import ExpiredSignatureError, decode as jwt_decode, exceptions as jwt_exceptions
+
 
 from typing import List
 
 import os
+
+from starlette.middleware.base import BaseHTTPMiddleware
 
 DB_NAME = os.getenv('DB_NAME')
 DB_USER = os.getenv('DB_USER')
@@ -31,8 +40,95 @@ model = CatBoostClassifier()
 model.load_model('model_task1')
 
 
+def authorize(token: str) -> bool:
+    try:
+        if token == 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjIxNDM4NzcsIklEIjoxLCJVc2VyVHlwZSI6IiJ9.4Dvv-2I4sFpwsBMEJA3HTjyh8PrbEtfgXikDx54xXog':
+            return True
+        elif token == '':
+            raise ExpiredSignatureError
+        else:
+            raise jwt_exceptions.DecodeError
+    except ExpiredSignatureError:
+        raise HTTPException(401, detail='jwt expired')
+    except jwt_exceptions.DecodeError:
+        raise HTTPException(401, detail='wrong jwt')
+
+
+# async def authorization_middleware(request: Request, call_next):
+#     if request.url.path in ["/docs", "/redoc", "/openapi.json"]:
+#         return await call_next(request)
+#
+#     auth = request.headers.get("Authorization")
+#     if not auth or "Bearer" not in auth:
+#         return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"detail": "no bearer provided in authorization"})
+#
+#     jwt_token = auth.split(" ")[1]
+#
+#     try:
+#         is_accessed = authorize(jwt_token)
+#     except Exception as e:
+#         return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"detail": "error on parsing JWT"})
+#
+#     if not is_accessed:
+#         return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": "error on authorizing access JWT"})
+#
+#     response = await call_next(request)
+#     return response
+
+
+class AuthorizationMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if request.url.path in ["/docs", "/redoc", "/openapi.json"]:
+            return await call_next(request)
+
+        auth = request.headers.get("Authorization")
+        if not auth or "Bearer" not in auth:
+            return JSONResponse(status_code=401, content={"detail": "no bearer provided in authorization"})
+
+        jwt_token = auth.split(" ")[1]
+
+        try:
+            is_accessed = authorize(jwt_token)
+        except Exception as e:
+            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"detail": "error on parsing JWT"})
+
+        if not is_accessed:
+            return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": "error on authorizing access JWT"})
+
+        response = await call_next(request)
+        return response
+
+
+# Add the authorization middleware first
+app.add_middleware(AuthorizationMiddleware)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 @app.post("/predict_all/")
 async def predict_all(date: datetime.datetime):
+    """
+    Описание
+    Получение предсказаний аварийных событий по всем объектам из таблицы buildings за определенную дату (день)
+
+    Входные данные
+
+    date: string формата datetime (2024-04-01T00:00:00)
+
+    Результат
+    {
+      unom: [prob'T < min', prob'T > max', prob'Давление не в норме', prob'ОК', prob'Утечка']
+    }
+    unom - УНОМ объекта, string
+    prob'T < min', prob'T > max', prob'Давление не в норме', prob'ОК', prob'Утечка' - вероятности каждого из событий, float.
+
+    """
     try:
         conn = psycopg2.connect(
             user=DB_USER,
@@ -55,7 +151,52 @@ async def predict_all(date: datetime.datetime):
 
 
 @app.post("/predict_one/")
-async def predict_one(unom: int, date: datetime.datetime, n: int):
+async def predict_one(unom: int, date: datetime.datetime, n: int, date_start: datetime.datetime,
+                      date_end: datetime.datetime):
+    """
+    Описание
+    Получение предсказаний аварийных событий для одного УНОМа, а также сводки данных по заданному промежутку времени для данного УНОМа
+
+    Входные данные
+
+    unom: integer - УНОМ объекта предсказания
+    date: string формата datetime (2024-04-01T00:00:00)
+    n: integer - количество дней для прогноза (будут возвращены прогнозы от 0 до n-1 дня)
+    date_start: string datetime - начало среза данных для статистик
+    date_end: string datetime - конец среза данных для статистик
+
+    Результат
+    {
+      “predict”: {
+    “dd-MM-YYYY”: [prob'T < min', prob'T > max', prob'Давление не в норме', prob'ОК',      prob'Утечка']
+      },
+      “incidents_count”: {
+    “{incident_name}”: incident_count
+    },
+    “odpu_plot”: {
+      “volume1”: {“dd-MM-YYYY”: value},
+      “volume2”: {“dd-MM-YYYY”: value},
+      “q2”: {“dd-MM-YYYY”: value},
+      “difference_supply_return_mix_all”: {“dd-MM-YYYY”: value},
+      “difference_supply_return_leak_all”: {“dd-MM-YYYY”: value},
+      “temperature_supply_all”: {“dd-MM-YYYY”: value},
+      “temperature_return_all”: {“dd-MM-YYYY”: value}
+    }
+    }
+    predict - словарь с ключем - датой, значением - предсказанием за эту дату
+    prob'T < min', prob'T > max', prob'Давление не в норме', prob'ОК', prob'Утечка' - вероятности каждого из событий, float.
+    incidents_count - количество инцидентов каждого типа за данный промежуток от date_start до date_end
+    odpu_plot - словарь со значениями показателей с ОДПУ:
+
+    difference_supply_return_leak_all - Разница между подачей и обраткой(Утечка)
+    difference_supply_return_mix_all'- Разница между подачей и обраткой(Подмес)
+    q2 - расход тепловой энергии
+    temperature_return_all - Температура обратки
+    temperature_supply_all - Температура подачи
+    volume1 - Объём поданого теплоносителя в систему ЦО
+    volume2  - Объём обратного теплоносителя из системы ЦО
+
+    """
     try:
         conn = psycopg2.connect(
             user=DB_USER,
@@ -66,9 +207,48 @@ async def predict_one(unom: int, date: datetime.datetime, n: int):
         )
 
         # Получаем предсказания
-        preds = get_predict_for_one(model, unom, date, n, conn)
+        preds = get_predict_for_one(model, unom, date, n, date_start, date_end, conn)
 
         return preds
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    finally:
+        conn.close()
+
+
+@app.get("/get_stats/")
+async def get_stats(date: datetime.datetime):
+    """
+    Получает статистические данные на основе указанной даты.
+
+    Аргументы:
+        date (datetime.datetime): Дата, для которой необходимо получить статистические данные.
+
+    Возвращает:
+        dict: Структурированные статистические данные, включая количество событий, связанных с управлением теплом,
+              количество завершённых и текущих задач, данные о погоде и количество объектов без событий.
+
+    Описание:
+        - Устанавливает соединение с базой данных PostgreSQL.
+        - Вызывает функцию get_stats_from_bd для извлечения данных о событиях и других статистических показателях.
+        - Возвращает ответ в формате JSON с данными о количестве событий, завершённых и текущих задачах,
+          погодных условиях и количестве объектов без событий.
+    """
+    try:
+        conn = psycopg2.connect(
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,  # локальный хост
+            port="5432",  # стандартный порт PostgreSQL
+            database=DB_NAME
+        )
+
+        # Получаем предсказания
+        ans = get_stats_from_bd(date, conn)
+
+        return ans
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -219,6 +399,16 @@ categorical_features = [
 
 
 def get_predict_for_all(model: CatBoostClassifier, date: datetime.datetime, conn) -> dict:
+    """Получает предсказания для всех уникальных объектов.
+
+    Аргументы:
+        model (CatBoostClassifier): Обученная модель CatBoost.
+        date (datetime.datetime): Дата, на основе которой строятся предсказания.
+        conn: Соединение с базой данных PostgreSQL.
+
+    Возвращает:
+        dict: Словарь, где ключ - уникальный объект (УНОМ), значение - предсказания модели.
+    """
     agg_data = get_agg_data(conn)
     agg_data = agg_data.dropna(subset='unom')
     unomlst = agg_data['unom'].unique().tolist()
@@ -255,6 +445,8 @@ def get_predict_for_all(model: CatBoostClassifier, date: datetime.datetime, conn
     numerical_features = [col for col in events2preds.columns if col not in categorical_features]
 
     # Удаление строк с NaN в числовых признаках
+    events2preds.replace('', np.nan, inplace=True)
+    events2preds[numerical_features] = events2preds[numerical_features].astype(float)
     events2preds[numerical_features] = events2preds[numerical_features].fillna(events2preds[numerical_features].mean())
 
     for col in categorical_features:
@@ -267,7 +459,22 @@ def get_predict_for_all(model: CatBoostClassifier, date: datetime.datetime, conn
     return events2preds[['УНОМ', 'preds']].set_index('УНОМ')['preds'].to_dict()
 
 
-def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.datetime, n: int, conn) -> dict:
+def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.datetime, n: int, date_start, date_end,
+                        conn) -> dict:
+    """
+    Получает предсказание для одного объекта на основе модели CatBoost.
+
+    Аргументы:
+        model (CatBoostClassifier): Модель CatBoost для предсказаний.
+        unom (int): Уникальный номер объекта.
+        date (datetime.datetime): Дата для создания предсказания.
+        n (int): Количество последних записей для использования.
+        conn: Соединение с базой данных PostgreSQL.
+
+    Возвращает:
+        dict: Словарь с предсказаниями, где ключ - УНОМ, значение - предсказание.
+
+    """
     agg_data = get_agg_data_one(unom, conn)
     events2preds = pd.DataFrame({
         "УНОМ": [unom] * n,
@@ -295,19 +502,150 @@ def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.dat
     events2preds = add_cyclic_features(events2preds, 'day', 31)
     events2preds = add_cyclic_features(events2preds, 'dayofweek', 31)
     events2preds = add_cyclic_features(events2preds, 'weekofyear', 31)
+
+    ans = events2preds[['Дата создания во внешней системе']]
     events2preds.drop("Дата создания во внешней системе", axis=1, inplace=True)
-
     numerical_features = [col for col in events2preds.columns if col not in categorical_features]
-
     # Удаление строк с NaN в числовых признаках
+    events2preds.replace('', np.nan, inplace=True)
+    events2preds[numerical_features] = events2preds[numerical_features].astype(float)
     events2preds[numerical_features] = events2preds[numerical_features].fillna(events2preds[numerical_features].mean())
-
     for col in categorical_features:
         events2preds[col] = events2preds[col].astype(str)
 
     preds = model.predict_proba(events2preds[features])
+    ans['preds'] = preds.tolist()
+    ans['Дата создания во внешней системе'] = ans['Дата создания во внешней системе'].dt.strftime('%d.%m.%Y')
 
-    return preds.tolist()
+    ans = {"predict": ans[['Дата создания во внешней системе', 'preds']].set_index('Дата создания во внешней системе')[
+        'preds'].to_dict()}
+
+    events = events[(events['Дата создания во внешней системе'] >= date_start) &
+                    (events['Дата создания во внешней системе'] <= date_end)]
+    ans['incidents_count'] = events.groupby('Наименование').count()['Дата создания во внешней системе'].to_dict()
+
+    odpu_stat = odpu[['Месяц/Год', 'volume1forhour', 'volume2forhour', 'q2forhour', 'difference_supply_return_mix_all',
+                      'difference_supply_return_leak_all', 'temperature_supply_all', 'temperature_return_all']]
+    odpu_stat = odpu_stat[(odpu_stat['Месяц/Год'] >= date_start) &
+                          (odpu_stat['Месяц/Год'] <= date_end)]
+    odpu_stat['Месяц/Год'] = odpu_stat['Месяц/Год'].dt.strftime('%d.%m.%Y')
+    odpu_stat[['volume1forhour', 'volume2forhour', 'q2forhour']] *= 24
+    odpu_stat.rename(columns={
+        'volume1forhour': 'volume1', 'volume2forhour': 'volume2', 'q2forhour': 'q2'
+    }, inplace=True)
+    odpu_stat[['volume1', 'volume2', 'q2']] = odpu_stat[['volume1', 'volume2', 'q2']].fillna(
+        odpu_stat[['volume1', 'volume2', 'q2']].mean())
+
+    ans['odpu_plot'] = odpu_stat.set_index('Месяц/Год').to_dict()
+
+    return ans
+
+
+num2month = {
+    10: "october",
+    11: "november",
+    12: "december",
+    1: "january",
+    2: "february",
+    3: "march",
+    4: "april",
+    5: "may",
+    6: "june",
+    7: "july",
+    8: "august",
+    9: "september"
+}
+
+
+def get_stats_from_bd(date, conn):
+    """
+    Вспомогательная функция для получения статистических данных из базы данных.
+
+    Аргументы:
+        date (datetime.datetime): Дата, для которой необходимо получить статистические данные.
+        conn (connection): Соединение с базой данных.
+
+    Возвращает:
+        dict: Структурированные статистические данные на основе указанной даты.
+
+    Описание:
+        - Извлекает события из базы данных, которые произошли в пределах последних двух недель до указанной даты.
+        - Переименовывает столбцы для соответствия заданной схеме и фильтрует события по ключевым наименованиям.
+        - Подсчитывает количество событий по категориям, количество завершённых и текущих задач.
+        - Извлекает погодные данные из файла 'weather.json' на основе указанной даты.
+        - Вычисляет количество уникальных УНОМов и количество объектов без событий в базе данных.
+    """
+    ans = {}
+
+    events = pd.read_sql(
+        f"""
+        SELECT *
+        FROM events
+        WHERE 
+            events.creation_date <= '{date.strftime("%Y-%m-%d")}'
+            AND events.creation_date >= '{(date - pd.Timedelta(days=14)).strftime("%Y-%m-%d")}'
+        """, conn
+    )
+    events.rename(columns={
+        'name': 'Наименование',
+        'source': 'Источник',
+        'creation_date': 'Дата создания во внешней системе',
+        'closure_date': 'Дата закрытия',
+        'district': 'Округ',
+        'unom': 'УНОМ',
+        'address': 'Адрес',
+        'event_completion_date': 'Дата и время завершения события'
+    }, inplace=True)
+
+    eventNames2labels = {
+        "P1 <= 0": "Давление не в норме",
+        "P2 <= 0": "Давление не в норме",
+        "T1 > max": "T > max",
+        "T1 < min": "T < min",
+        "Недостаточная температура подачи в центральном отоплении (Недотоп)": "T < min",
+        "Превышение температуры подачи в центральном отоплении (Перетоп)": "T > max",
+        "Утечка теплоносителя": "Утечка",
+        "Течь в системе отопления": "Утечка",
+        "Температура в квартире ниже нормативной": "T < min",
+        "Отсутствие отопления в доме": "T < min",
+        "Сильная течь в системе отопления": "Утечка",
+        "Температура в помещении общего пользования ниже нормативной": "T < min",
+        "Аварийная протечка труб в подъезде": "Утечка",
+        "Протечка труб в подъезде": "Утечка",
+        "Температура в помещении общего пользования ниже нормативной": "T < min",
+        "Отсутствие отопления в доме": "T < min",
+        "Температура в квартире ниже нормативной": "T < min",
+        "Течь в системе отопления": "Утечка",
+        "Сильная течь в системе отопления": "Утечка",
+
+    }
+
+    events['Наименование'] = events['Наименование'].apply(lambda x: eventNames2labels[x])
+    events['Дата создания во внешней системе'] = pd.to_datetime(events['Дата создания во внешней системе'])
+    events['Дата и время завершения события'] = pd.to_datetime(events['Дата и время завершения события'])
+    # events.sort_values(by='Дата создания во внешней системе', inplace=True, ignore_index=True)
+
+    counts = events.groupby('Наименование').count()['Дата создания во внешней системе']
+
+    ans['event_counts'] = counts.to_dict()
+    ans['count_collect_tasks'] = len(events[events['Дата и время завершения события'] <= date])
+    ans['count_current_tasks'] = len(events[events['Дата создания во внешней системе'] <= date])
+
+    with open('weather.json', 'r', encoding='utf-8') as file:
+        weather = json.load(file)
+
+    mon = num2month[date.month]
+    day = "{:02d}".format(date.day)
+    weather1, weather2 = weather[mon][day]
+    ans['weather1'] = weather1
+    ans['weather2'] = weather2
+
+    n_unique_unoms = \
+    pd.read_sql("SELECT COUNT(DISTINCT unom) AS unique_unom_count FROM buildings;", conn).unique_unom_count[0]
+    n_unique_unoms_with_event = events['УНОМ'].nunique()
+    ans['n_unoms_without_events'] = int(n_unique_unoms) - int(n_unique_unoms_with_event)
+
+    return ans
 
 
 ftrs2odpu = [
@@ -334,6 +672,22 @@ ftrs2odpu = [
 
 
 def add_opdu_features(odpu, row):
+    """
+    Добавляет агрегированные признаки из данных ОДПУ (Объединенные данные по потреблению) к строке данных.
+
+    Аргументы:
+        odpu (DataFrame): DataFrame с данными ОДПУ, содержащими информацию о потреблении для различных объектов.
+        row (Series): Строка данных, к которой добавляются признаки.
+
+    Возвращает:
+        Series: Обновленная строка данных с добавленными агрегированными признаками из ОДПУ.
+
+    Описание:
+        - Фильтрует данные ОДПУ для конкретного объекта (УНОМ) и оставляет только те записи, которые предшествуют текущему времени (curr_time).
+        - Ограничивает выборку последних записей до 14 (если записей больше 14).
+        - Рассчитывает и добавляет к строке средние значения, стандартное отклонение, минимальные, максимальные и медианные значения для указанных признаков.
+        - Добавляет последние доступные значения признаков 'Потребители', 'Группа', 'Центральное отопление(контур)', 'Ошибки' или None, если данных нет.
+    """
     local_odpu = odpu[odpu['UNOM'] == row['УНОМ']]
     curr_time = row['Дата создания во внешней системе']
     local_odpu = local_odpu[local_odpu['Месяц/Год'] < curr_time]
@@ -360,6 +714,26 @@ def add_opdu_features(odpu, row):
 
 
 def get_odpu(date: datetime.datetime, conn) -> pd.DataFrame:  # возвращает таблицу odpu, ОБРЕЗАННУЮ ПО ДАТЕ
+    """
+    Возвращает таблицу ОДПУ, обрезанную по дате.
+
+    Аргументы:
+        date (datetime.datetime): Дата, по которой будет обрезана таблица ОДПУ.
+        conn: Соединение с базой данных PostgreSQL.
+
+    Возвращает:
+        pd.DataFrame: DataFrame с данными ОДПУ, содержащий информацию о потреблении тепловой энергии за последние 14 дней до указанной даты.
+
+    Описание:
+        - Загружает данные из таблицы heating_data из базы данных PostgreSQL, обрезанные по дате, с использованием SQL-запроса.
+        - Переименовывает столбцы для удобства использования.
+        - Преобразует столбец 'Месяц/Год' в формат datetime.
+        - Фильтрует данные, оставляя только записи за последние 14 дней до указанной даты.
+        - Сортирует данные по столбцу 'Месяц/Год'.
+        - Преобразует столбец 'Объём поданого теплоносителя в систему ЦО' в формат float.
+        - Добавляет новые признаки 'volume1forhour', 'volume2forhour', 'q2forhour', которые вычисляются на основе объема теплоносителя и наработки часов счётчика.
+
+    """
     odpu = pd.read_sql(
         f"""
         SELECT
@@ -411,6 +785,27 @@ def get_odpu(date: datetime.datetime, conn) -> pd.DataFrame:  # возвраща
 
 
 def get_odpu_one(unom: int, date: datetime.datetime, conn):
+    """
+    Возвращает данные ОДПУ для одного объекта за последние 14 дней до указанной даты.
+
+    Аргументы:
+        unom (int): Уникальный номер объекта (УНОМ).
+        date (datetime.datetime): Дата, по которой будет обрезана таблица ОДПУ.
+        conn: Соединение с базой данных PostgreSQL.
+
+    Возвращает:
+        pd.DataFrame: DataFrame с данными ОДПУ для указанного объекта (УНОМ), содержащий информацию о потреблении тепловой энергии за последние 14 дней до указанной даты.
+
+    Описание:
+        - Загружает данные из таблицы heating_data из базы данных PostgreSQL, отфильтрованные по уникальному номеру объекта (УНОМ) и обрезанные по дате, с использованием SQL-запроса.
+        - Переименовывает столбцы для удобства использования.
+        - Преобразует столбец 'Месяц/Год' в формат datetime.
+        - Фильтрует данные, оставляя только записи за последние 14 дней до указанной даты.
+        - Сортирует данные по столбцу 'Месяц/Год'.
+        - Преобразует столбец 'Объём поданого теплоносителя в систему ЦО' в формат float.
+        - Добавляет новые признаки 'volume1forhour', 'volume2forhour', 'q2forhour', которые вычисляются на основе объема теплоносителя и наработки часов счётчика.
+
+    """
     odpu = pd.read_sql(
         f"""
         SELECT
@@ -458,11 +853,31 @@ def get_odpu_one(unom: int, date: datetime.datetime, conn):
     odpu['volume1forhour'] = odpu['Объём поданого теплоносителя в систему ЦО'] / (odpu['Наработка часов счётчика'])
     odpu['volume2forhour'] = odpu['Объём обратного теплоносителя из системы ЦО'] / (odpu['Наработка часов счётчика'])
     odpu['q2forhour'] = odpu['Расход тепловой энергии'].astype(float) / (odpu['Наработка часов счётчика'])
+    odpu['difference_supply_return_mix_all'] = odpu['Разница между подачей и обраткой(Подмес)'].astype(float) / (
+    odpu['Наработка часов счётчика']) * 24
+    odpu['difference_supply_return_leak_all'] = odpu['Разница между подачей и обраткой(Утечка)'].astype(float) / (
+    odpu['Наработка часов счётчика']) * 24
+    odpu['temperature_supply_all'] = odpu['Температура подачи'].astype(float) / (odpu['Наработка часов счётчика']) * 24
+    odpu['temperature_return_all'] = odpu['Температура обратки'].astype(float) / (odpu['Наработка часов счётчика']) * 24
 
     return odpu
 
 
 def get_agg_data(conn) -> pd.DataFrame:
+    """
+    Возвращает агрегированные данные из таблицы buildings.
+
+    Аргументы:
+        conn: Соединение с базой данных PostgreSQL.
+
+    Возвращает:
+        pd.DataFrame: DataFrame с агрегированными данными из таблицы buildings.
+
+    Описание:
+        - Выполняет SQL-запрос для получения всех данных из таблицы buildings.
+        - Преобразует результат запроса в DataFrame.
+        - Переименовывает столбцы для удобства использования.
+    """
     df = pd.read_sql_query(
         """ 
         SELECT *
@@ -554,6 +969,21 @@ def get_agg_data(conn) -> pd.DataFrame:
 
 
 def get_agg_data_one(unom: int, conn) -> pd.DataFrame:
+    """
+    Возвращает агрегированные данные из таблицы buildings для конкретного UNOM.
+
+    Аргументы:
+        unom: Уникальный идентификатор объекта недвижимости.
+        conn: Соединение с базой данных PostgreSQL.
+
+    Возвращает:
+        pd.DataFrame: DataFrame с агрегированными данными из таблицы buildings для указанного UNOM.
+
+    Описание:
+        - Выполняет SQL-запрос для получения данных из таблицы buildings для конкретного UNOM.
+        - Преобразует результат запроса в DataFrame.
+        - Переименовывает столбцы для удобства использования.
+    """
     df = pd.read_sql_query(
         f""" 
         SELECT *
@@ -668,6 +1098,21 @@ new_event_names = [
 
 
 def collect_events(row, events):
+    """
+    Агрегирует события из таблицы events для указанной строки датасета.
+
+    Аргументы:
+        row: Строка датасета, для которой собираются события.
+        events: DataFrame с данными событий.
+
+    Возвращает:
+        pd.Series: Строка с добавленными признаками событий для указанной строки.
+
+    Описание:
+        - Фильтрует события по УНОМ и времени создания внешней системы.
+        - Группирует события по наименованию и месяцу создания и считает количество событий.
+        - Добавляет количество событий разных типов и за разные месяцы в исходную строку датасета.
+    """
     local_events = events[events['УНОМ'] == row['УНОМ']]
     curr_time = row['Дата создания во внешней системе']
     local_events = local_events[local_events['Дата создания во внешней системе'] > curr_time]
@@ -688,30 +1133,49 @@ def collect_events(row, events):
     return row[feature2events]
 
 
-num2month = {
-    10: "october",
-    11: "november",
-    12: "december",
-    1: "january",
-    2: "february",
-    3: "march",
-    4: "april",
-    5: "may",
-    6: "june",
-    7: "july",
-    8: "august",
-    9: "september"
-}
-
-
 def collect_weather(row, weather):
+    """
+    Добавляет информацию о погоде в указанную строку набора данных.
+
+    Аргументы:
+        row (pd.Series): Строка набора данных, к которой будет добавлена информация о погоде.
+        weather (dict): Словарь, содержащий данные о погоде, полученные из внешнего сервиса.
+
+    Возвращает:
+        pd.Series: Строка с добавленными признаками погоды 'weather1' и 'weather2'.
+
+    Описание:
+        - Извлекает данные о погоде для указанной даты из словаря 'weather'.
+        - Обновляет строку признаками 'weather1' и 'weather2' на основе извлеченных данных.
+    """
     mon = num2month[row.month]
     day = "{:02d}".format(row.day)
-    row['weather1'], row['weather2'] = weather[mon][day]
+    try:
+        row['weather1'], row['weather2'] = weather[mon][day]
+    except:
+        row['weather1'], row['weather2'] = '', ''
     return row[['weather1', 'weather2']]
 
 
 def get_events(date, conn) -> pd.DataFrame:
+    """
+    Получает события из базы данных, которые произошли до указанной даты.
+
+    Аргументы:
+        date (datetime.datetime): Дата, до которой нужно получить события.
+        conn (connection): Соединение с базой данных.
+
+    Возвращает:
+        pd.DataFrame: Набор данных о событиях, включающий информацию о наименовании,
+                     источнике, дате создания во внешней системе, УНОМ, месяце и дне.
+
+    Описание:
+        - Извлекает события из базы данных, которые произошли до указанной даты.
+        - Переименовывает столбцы для соответствия заданной схеме.
+        - Фильтрует события по заданным наименованиям и переименовывает их соответственно.
+        - Преобразует столбец 'Дата создания во внешней системе' в формат datetime.
+        - Сортирует события по дате создания во внешней системе.
+    """
     events = pd.read_sql(
         f"""
         SELECT *
@@ -768,6 +1232,25 @@ def get_events(date, conn) -> pd.DataFrame:
 
 
 def get_events_one(unom: int, date: datetime.datetime, conn) -> pd.DataFrame:
+    """
+    Получает события из базы данных для конкретного УНОМа до указанной даты.
+
+    Аргументы:
+        unom (int): УНОМ (уникальный номер объекта теплоснабжения), для которого нужно получить события.
+        date (datetime.datetime): Дата, до которой нужно получить события.
+        conn (connection): Соединение с базой данных.
+
+    Возвращает:
+        pd.DataFrame: Набор данных о событиях для указанного УНОМа, включающий информацию
+                     о наименовании, источнике, дате создания во внешней системе, месяце и дне.
+
+    Описание:
+        - Извлекает события из базы данных, которые произошли до указанной даты для заданного УНОМа.
+        - Переименовывает столбцы для соответствия заданной схеме.
+        - Фильтрует события по заданным наименованиям и переименовывает их соответственно.
+        - Преобразует столбец 'Дата создания во внешней системе' в формат datetime.
+        - Сортирует события по дате создания во внешней системе.
+    """
     events = pd.read_sql(
         f"""
         SELECT *
@@ -825,6 +1308,15 @@ def get_events_one(unom: int, date: datetime.datetime, conn) -> pd.DataFrame:
 
 
 def extract_datetime_features(df, date_col):
+    """Извлекает временные признаки из столбца с датами.
+
+    Аргументы:
+        df (pd.DataFrame): DataFrame, содержащий данные.
+        date_col (str): Название столбца с датами.
+
+    Возвращает:
+        pd.DataFrame: Обновленный DataFrame с добавленными временными признаками.
+    """
     df['year'] = df[date_col].dt.year
     df['month'] = df[date_col].dt.month
     df['day'] = df[date_col].dt.day
@@ -838,9 +1330,20 @@ def extract_datetime_features(df, date_col):
 
 
 def add_cyclic_features(df, col, max_val):
+    """Добавляет циклические признаки в DataFrame.
+
+    Аргументы:
+        df (pd.DataFrame): DataFrame, содержащий данные.
+        col (str): Название столбца, для которого добавляются циклические признаки.
+        max_val (int): Максимальное значение для нормализации циклического признака.
+
+    Возвращает:
+        pd.DataFrame: Обновленный DataFrame с добавленными циклическими признаками.
+    """
     df[col + '_sin'] = np.sin(2 * np.pi * df[col] / max_val)
     df[col + '_cos'] = np.cos(2 * np.pi * df[col] / max_val)
     return df
+
 
 class CatBoostModel:
     def __init__(self, data, type_description_dict, material_parameters_dict, model_path='catboost.cbm'):
@@ -915,7 +1418,6 @@ class CatBoostModel:
                 if not N: N = 9
                 if str(N) == 'nan': N = 9
 
-
                 # print("Количество этажей", N)
                 d = 0.3
                 material = self.type_description_dict.get(temp_data['Материалы стен'], 'Железобетон')
@@ -940,8 +1442,8 @@ class CatBoostModel:
                         }
 
         except Exception as e:
-                print(f"Ошибка при подключении к базе данных: {e}")
-                return None
+            print(f"Ошибка при подключении к базе данных: {e}")
+            return None
 
 
     def prepare_one_data_sample(self, unom, t_in, t_outside):
@@ -1144,52 +1646,64 @@ class CatBoostModel:
 
         return df_sorted
 
-def get_current_temperature():
+def get_current_inside_temperature():
     """
     Функция для получения прогноза погоды от Яндекс.Погоды по координатам.
     :param lat: Широта
     :param lon: Долгота
     :return: Прогноз погоды
     """
-    url = f'https://api.weather.yandex.ru/v2/forecast?lat=55.787715&lon=37.775631'
-    headers = {'X-Yandex-Weather-Key': "83f2c69f-542f-4a2a-b1dc-b32b2d01e7ac"}
+    # url = f'https://api.weather.yandex.ru/v2/forecast?lat=55.787715&lon=37.775631'
+    # headers = {'X-Yandex-Weather-Key': "0281e1b2-1d86-4735-a2b6-6a77b605fb86"}
 
-    response = requests.get(url, headers=headers)
+    # response = requests.get(url, headers=headers)
 
-    if response.status_code == 200:
-        return response.json()["fact"]["temp"]
-    else:
-        print(f"Ошибка при запросе: {response.status_code}")
-        return None
+    # if response.status_code == 200:
+    #     return response.json()["fact"]["temp"]
+    # else:
+    #     print(f"Ошибка при запросе: {response.status_code}")
+    #     return None
+    return 22
 
 
-def get_future_temperature():
+def get_weather_forecast():
     """
     Функция для получения прогноза погоды от Яндекс.Погоды по координатам.
     :param lat: Широта
     :param lon: Долгота
     :return: Прогноз погоды
     """
+
     # Получаем текущую дату и время
-    now = int(get_current_temperature())
+    # now = int(get_current_inside_temperature())
 
-    url = f'https://api.weather.yandex.ru/v2/forecast?lat=55.787715&lon=37.775631'
-    headers = {'X-Yandex-Weather-Key': "83f2c69f-542f-4a2a-b1dc-b32b2d01e7ac"}
+    # url = f'https://api.weather.yandex.ru/v2/forecast?lat=55.787715&lon=37.775631'
+    # headers = {'X-Yandex-Weather-Key': "0281e1b2-1d86-4735-a2b6-6a77b605fb86"}
 
-    response = requests.get(url, headers=headers)
+    # response = requests.get(url, headers=headers)
 
-    if response.status_code == 200:
-        return {
-            't_in_5_hours': now,
-            't_in_10_hours': now,
-            't_in_15_hours': now,
-            't_in_20_hours': now,
-            't_in_25_hours': now,
-            't_in_30_hours': now
+    # if response.status_code == 200:
+    #     return {
+    #         't_in_5_hours': now,
+    #         't_in_10_hours': now,
+    #         't_in_15_hours': now,
+    #         't_in_20_hours': now,
+    #         't_in_25_hours': now,
+    #         't_in_30_hours': now
+    #     }
+    # else:
+    #     print(f"Ошибка при запросе: {response.status_code}")
+    #     return None
+    weather = pd.read_csv("weather_forecast.csv")
+    weather_forecast = weather['temperature'].head(6).tolist()
+    return {
+            't_in_5_hours': weather_forecast[0],
+            't_in_10_hours': weather_forecast[1],
+            't_in_15_hours': weather_forecast[2],
+            't_in_20_hours': weather_forecast[3],
+            't_in_25_hours': weather_forecast[4],
+            't_in_30_hours': weather_forecast[5]
         }
-    else:
-        print(f"Ошибка при запросе: {response.status_code}")
-        return None
 
 
 def connect_to_db():
@@ -1242,11 +1756,11 @@ async def calc_cooldown(unoms: List[int]):
             if database is None:
                 raise HTTPException(status_code=500, detail="Ошибка при считывании данных из базы данных")
 
-            t_inside = [get_current_temperature()] * len(unoms)
-            t_outside = get_future_temperature()
+            t_inside = [get_current_inside_temperature()] * len(unoms)
+            t_outside = get_weather_forecast()
 
             # Получаем предсказания
-            catboost_model = CatBoostModel(database, type_description_dict, material_parameters_dict, model_path='catboost.cbm')
+            catboost_model = CatBoostModel(database, type_description_dict, material_parameters_dict, model_path='catboost_for_house_cooling.cbm')
             data_for_catboost = catboost_model.prepare_data_for_catboost(unoms, t_inside, t_outside)
             catboost_predictions = catboost_model.get_catboost_predictions(data_for_catboost)
             df_sorted = catboost_model.get_final_ranking(catboost_predictions)

@@ -3,6 +3,8 @@ definitions:
     properties:
       consumer_type:
         type: integer
+      date:
+        type: string
       district:
         type: boolean
       heat_network:
@@ -12,9 +14,21 @@ definitions:
     type: object
   models.HandledUnom:
     properties:
-      hours_to_cool:
+      Rank:
         type: integer
-      priority_group:
+      bti_address:
+        $ref: '#/definitions/null.String'
+      full_address:
+        $ref: '#/definitions/null.String'
+      geoData:
+        items:
+          items:
+            items:
+              type: number
+            type: array
+          type: array
+        type: array
+      hours:
         type: integer
       unom:
         type: integer
@@ -22,6 +36,10 @@ definitions:
   models.Incident:
     properties:
       coordinates:
+        items:
+          type: number
+        type: array
+      ctp_center:
         items:
           type: number
         type: array
@@ -49,8 +67,25 @@ definitions:
         items:
           type: number
         type: array
+      ctp_id:
+        type: string
       id:
         type: integer
+      payload: {}
+    type: object
+  models.IncidentUpdate:
+    properties:
+      id:
+        type: integer
+      payload: {}
+    type: object
+  null.String:
+    properties:
+      string:
+        type: string
+      valid:
+        description: Valid is true if String is not NULL
+        type: boolean
     type: object
 info:
   contact: {}
@@ -65,6 +100,12 @@ paths:
         name: unom
         required: true
         type: integer
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -127,6 +168,12 @@ paths:
       - description: ctp_id STRING
         in: query
         name: ctp_id
+        required: true
+        type: string
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
         required: true
         type: string
       produces:
@@ -194,6 +241,12 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/models.GeoDataFilter'
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -258,6 +311,12 @@ paths:
         name: id
         required: true
         type: integer
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -290,6 +349,12 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/models.IncidentCreate'
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -312,10 +377,55 @@ paths:
       summary: Create incident
       tags:
       - incident
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Incident update
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.IncidentUpdate'
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully
+          schema:
+            type: integer
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update incident payload
+      tags:
+      - incident
   /incident/all:
     get:
       consumes:
       - application/json
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -340,4 +450,119 @@ paths:
       summary: Get all incidents
       tags:
       - incident
+  /incidents_by_unom:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Unom
+        in: query
+        name: unom
+        required: true
+        type: integer
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully
+          schema:
+            items:
+              $ref: '#/definitions/models.Incident'
+            type: array
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get incidents by unom
+      tags:
+      - incident
+  /login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: login
+        in: query
+        name: login
+        required: true
+        type: string
+      - description: password
+        in: query
+        name: password
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully
+          schema:
+            type: integer
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login
+      tags:
+      - auth
+  /ml_predict_write:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Incident create
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully
+          schema:
+            type: integer
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Save predicts from two weeks before start date and two weeks after
+      tags:
+      - ml
 swagger: "2.0"

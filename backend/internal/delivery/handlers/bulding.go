@@ -27,6 +27,7 @@ func InitBuildingHandler(buildingServ service.Building) BuildingHandler {
 // @Produce  json
 // @Param unom query int true "unom"
 // @Success 200 {object} int "Successfully"
+// @Param Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /building [get]

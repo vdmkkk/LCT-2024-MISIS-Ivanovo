@@ -28,6 +28,7 @@ func InitGeoDataHandler(geoDataServ service.GeoData) GeoDataHandler {
 // @Produce  json
 // @Param data body models.GeoDataFilter true "Filters"
 // @Success 200 {object} int "Successfully"
+// @Param Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /geo/by_filters [put]

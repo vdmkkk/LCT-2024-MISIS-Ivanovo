@@ -34,6 +34,14 @@ const docTemplate = `{
                         "name": "unom",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -131,6 +139,14 @@ const docTemplate = `{
                         "description": "ctp_id STRING",
                         "name": "ctp_id",
                         "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -232,6 +248,14 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.GeoDataFilter"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -330,6 +354,14 @@ const docTemplate = `{
                         "name": "id",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -337,6 +369,63 @@ const docTemplate = `{
                         "description": "Successfully",
                         "schema": {
                             "$ref": "#/definitions/models.Incident"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "incident"
+                ],
+                "summary": "Update incident payload",
+                "parameters": [
+                    {
+                        "description": "Incident update",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.IncidentUpdate"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully",
+                        "schema": {
+                            "type": "integer"
                         }
                     },
                     "400": {
@@ -379,6 +468,14 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.IncidentCreate"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -421,6 +518,16 @@ const docTemplate = `{
                     "incident"
                 ],
                 "summary": "Get all incidents",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successfully",
@@ -429,6 +536,179 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/models.IncidentShowUp"
                             }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/incidents_by_unom": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "incident"
+                ],
+                "summary": "Get incidents by unom",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Unom",
+                        "name": "unom",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Incident"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/login": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "login",
+                        "name": "login",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "password",
+                        "name": "password",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ml_predict_write": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ml"
+                ],
+                "summary": "Save predicts from two weeks before start date and two weeks after",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Incident create",
+                        "name": "start_date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully",
+                        "schema": {
+                            "type": "integer"
                         }
                     },
                     "400": {
@@ -460,6 +740,9 @@ const docTemplate = `{
                 "consumer_type": {
                     "type": "integer"
                 },
+                "date": {
+                    "type": "string"
+                },
                 "district": {
                     "type": "boolean"
                 },
@@ -474,10 +757,28 @@ const docTemplate = `{
         "models.HandledUnom": {
             "type": "object",
             "properties": {
-                "hours_to_cool": {
+                "Rank": {
                     "type": "integer"
                 },
-                "priority_group": {
+                "bti_address": {
+                    "$ref": "#/definitions/null.String"
+                },
+                "full_address": {
+                    "$ref": "#/definitions/null.String"
+                },
+                "geoData": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        }
+                    }
+                },
+                "hours": {
                     "type": "integer"
                 },
                 "unom": {
@@ -489,6 +790,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "coordinates": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "ctp_center": {
                     "type": "array",
                     "items": {
                         "type": "number"
@@ -530,8 +837,33 @@ const docTemplate = `{
                         "type": "number"
                     }
                 },
+                "ctp_id": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
+                },
+                "payload": {}
+            }
+        },
+        "models.IncidentUpdate": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "payload": {}
+            }
+        },
+        "null.String": {
+            "type": "object",
+            "properties": {
+                "string": {
+                    "type": "string"
+                },
+                "valid": {
+                    "description": "Valid is true if String is not NULL",
+                    "type": "boolean"
                 }
             }
         }
