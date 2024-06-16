@@ -78,6 +78,9 @@ def authorize(token: str) -> bool:
 
 class AuthorizationMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        if request.url.path in ["/docs", "/redoc", "/openapi.json"]:
+            return await call_next(request)
+
         auth = request.headers.get("Authorization")
         if not auth or "Bearer" not in auth:
             return JSONResponse(status_code=401, content={"detail": "no bearer provided in authorization"})
