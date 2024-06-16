@@ -33,6 +33,22 @@ model.load_model('model_task1')
 
 @app.post("/predict_all/")
 async def predict_all(date: datetime.datetime):
+    """
+    Описание
+    Получение предсказаний аварийных событий по всем объектам из таблицы buildings за определенную дату (день)
+
+    Входные данные
+
+    date: string формата datetime (2024-04-01T00:00:00)
+
+    Результат
+    {
+        unom: [prob'T < min', prob'T > max', prob'Давление не в норме', prob'ОК', prob'Утечка']
+    }
+    unom - УНОМ объекта, string
+    prob'T < min', prob'T > max', prob'Давление не в норме', prob'ОК', prob'Утечка' - вероятности каждого из событий, float.
+
+    """
     try:
         conn = psycopg2.connect(
             user=DB_USER,
@@ -55,7 +71,7 @@ async def predict_all(date: datetime.datetime):
 
 
 @app.post("/predict_one/")
-async def predict_one(unom: int, date: datetime.datetime, n: int, date_start: datetime.datetime, date_end: datetime.datetime):
+async def predict_one(unom: int, date: datetime.datetime, n: int):
     try:
         conn = psycopg2.connect(
             user=DB_USER,
@@ -66,32 +82,9 @@ async def predict_one(unom: int, date: datetime.datetime, n: int, date_start: da
         )
 
         # Получаем предсказания
-        preds = get_predict_for_one(model, unom, date, n, date_start, date_end, conn)
+        preds = get_predict_for_one(model, unom, date, n, conn)
 
         return preds
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    finally:
-        conn.close()
-
-
-@app.get("/get_stats/")
-async def get_stats(date: datetime.datetime):
-    try:
-        conn = psycopg2.connect(
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,  # локальный хост
-            port="5432",  # стандартный порт PostgreSQL
-            database=DB_NAME
-        )
-
-        # Получаем предсказания
-        ans = get_stats_from_bd(date, conn)
-
-        return ans
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -278,8 +271,6 @@ def get_predict_for_all(model: CatBoostClassifier, date: datetime.datetime, conn
     numerical_features = [col for col in events2preds.columns if col not in categorical_features]
 
     # Удаление строк с NaN в числовых признаках
-    events2preds.replace('', np.nan, inplace=True)
-    events2preds[numerical_features] = events2preds[numerical_features].astype(float)
     events2preds[numerical_features] = events2preds[numerical_features].fillna(events2preds[numerical_features].mean())
 
     for col in categorical_features:
@@ -292,7 +283,7 @@ def get_predict_for_all(model: CatBoostClassifier, date: datetime.datetime, conn
     return events2preds[['УНОМ', 'preds']].set_index('УНОМ')['preds'].to_dict()
 
 
-def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.datetime, n: int, date_start, date_end, conn) -> dict:
+def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.datetime, n: int, conn) -> dict:
     agg_data = get_agg_data_one(unom, conn)
     events2preds = pd.DataFrame({
         "УНОМ": [unom] * n,
@@ -320,133 +311,19 @@ def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.dat
     events2preds = add_cyclic_features(events2preds, 'day', 31)
     events2preds = add_cyclic_features(events2preds, 'dayofweek', 31)
     events2preds = add_cyclic_features(events2preds, 'weekofyear', 31)
-
-    ans = events2preds[['Дата создания во внешней системе']]
     events2preds.drop("Дата создания во внешней системе", axis=1, inplace=True)
+
     numerical_features = [col for col in events2preds.columns if col not in categorical_features]
+
     # Удаление строк с NaN в числовых признаках
-    events2preds.replace('', np.nan, inplace=True)
-    events2preds[numerical_features] = events2preds[numerical_features].astype(float)
     events2preds[numerical_features] = events2preds[numerical_features].fillna(events2preds[numerical_features].mean())
+
     for col in categorical_features:
         events2preds[col] = events2preds[col].astype(str)
 
     preds = model.predict_proba(events2preds[features])
-    ans['preds'] = preds.tolist()
-    ans['Дата создания во внешней системе'] = ans['Дата создания во внешней системе'].dt.strftime('%d.%m.%Y')
 
-    ans = {"predict": ans[['Дата создания во внешней системе', 'preds']].set_index('Дата создания во внешней системе')['preds'].to_dict()}
-
-
-    events = events[(events['Дата создания во внешней системе'] >= date_start) &
-                    (events['Дата создания во внешней системе'] <= date_end)]
-    ans['incidents_count'] = events.groupby('Наименование').count()['Дата создания во внешней системе'].to_dict()
-
-
-    odpu_stat = odpu[['Месяц/Год', 'volume1forhour', 'volume2forhour', 'q2forhour', 'difference_supply_return_mix_all', 'difference_supply_return_leak_all', 'temperature_supply_all', 'temperature_return_all']]
-    odpu_stat = odpu_stat[(odpu_stat['Месяц/Год'] >= date_start) &
-                        (odpu_stat['Месяц/Год'] <= date_end)]
-    odpu_stat['Месяц/Год'] = odpu_stat['Месяц/Год'].dt.strftime('%d.%m.%Y')
-    odpu_stat[['volume1forhour', 'volume2forhour', 'q2forhour']] *= 24
-    odpu_stat.rename(columns={
-        'volume1forhour': 'volume1', 'volume2forhour': 'volume2', 'q2forhour': 'q2'
-    }, inplace=True)
-    odpu_stat[['volume1', 'volume2', 'q2']] = odpu_stat[['volume1', 'volume2', 'q2']].fillna(odpu_stat[['volume1', 'volume2', 'q2']].mean())
-    
-    ans['odpu_plot'] = odpu_stat.set_index('Месяц/Год').to_dict()
-
-    return ans
-
-num2month = {
-    10: "october",
-    11: "november",
-    12: "december",
-    1: "january",
-    2: "february",
-    3: "march",
-    4: "april",
-    5: "may",
-    6: "june",
-    7: "july",
-    8: "august",
-    9: "september"
-}
-
-
-def get_stats_from_bd(date, conn):
-    ans = {}
-
-
-    events = pd.read_sql(
-        f"""
-        SELECT *
-        FROM events
-        WHERE 
-            events.creation_date <= '{date.strftime("%Y-%m-%d")}'
-            AND events.creation_date >= '{(date - pd.Timedelta(days=14)).strftime("%Y-%m-%d")}'
-        """, conn
-    )
-    events.rename(columns={
-        'name': 'Наименование',
-        'source': 'Источник',
-        'creation_date': 'Дата создания во внешней системе',
-        'closure_date': 'Дата закрытия',
-        'district': 'Округ',
-        'unom': 'УНОМ',
-        'address': 'Адрес',
-        'event_completion_date': 'Дата и время завершения события'
-    }, inplace=True)
-
-    eventNames2labels = {
-        "P1 <= 0": "Давление не в норме",
-        "P2 <= 0": "Давление не в норме",
-        "T1 > max": "T > max",
-        "T1 < min": "T < min",
-        "Недостаточная температура подачи в центральном отоплении (Недотоп)": "T < min",
-        "Превышение температуры подачи в центральном отоплении (Перетоп)": "T > max",
-        "Утечка теплоносителя": "Утечка",
-        "Течь в системе отопления": "Утечка",
-        "Температура в квартире ниже нормативной": "T < min",
-        "Отсутствие отопления в доме": "T < min",
-        "Сильная течь в системе отопления": "Утечка",
-        "Температура в помещении общего пользования ниже нормативной": "T < min",
-        "Аварийная протечка труб в подъезде": "Утечка",
-        "Протечка труб в подъезде": "Утечка",
-        "Температура в помещении общего пользования ниже нормативной": "T < min",
-        "Отсутствие отопления в доме": "T < min",
-        "Температура в квартире ниже нормативной": "T < min",
-        "Течь в системе отопления": "Утечка",
-        "Сильная течь в системе отопления": "Утечка",
-
-    }
-
-
-    events['Наименование'] = events['Наименование'].apply(lambda x: eventNames2labels[x])
-    events['Дата создания во внешней системе'] = pd.to_datetime(events['Дата создания во внешней системе'])
-    events['Дата и время завершения события'] = pd.to_datetime(events['Дата и время завершения события'])
-    # events.sort_values(by='Дата создания во внешней системе', inplace=True, ignore_index=True)
-
-    counts = events.groupby('Наименование').count()['Дата создания во внешней системе']
-
-
-    ans['event_counts'] = counts.to_dict()
-    ans['count_collect_tasks'] = len(events[events['Дата и время завершения события'] <= date])
-    ans['count_current_tasks'] = len(events[events['Дата создания во внешней системе'] <= date])
-
-    with open('weather.json', 'r', encoding='utf-8') as file:
-        weather = json.load(file)
-
-    mon = num2month[date.month]
-    day = "{:02d}".format(date.day)
-    weather1, weather2 = weather[mon][day]
-    ans['weather1'] = weather1
-    ans['weather2'] = weather2
-
-    n_unique_unoms = pd.read_sql("SELECT COUNT(DISTINCT unom) AS unique_unom_count FROM buildings;", conn).unique_unom_count[0]
-    n_unique_unoms_with_event = events['УНОМ'].nunique()
-    ans['n_unoms_without_events'] = int(n_unique_unoms) - int(n_unique_unoms_with_event)
-
-    return ans
+    return preds.tolist()
 
 
 ftrs2odpu = [
@@ -549,7 +426,6 @@ def get_odpu(date: datetime.datetime, conn) -> pd.DataFrame:  # возвраща
     return odpu
 
 
-
 def get_odpu_one(unom: int, date: datetime.datetime, conn):
     odpu = pd.read_sql(
         f"""
@@ -598,10 +474,6 @@ def get_odpu_one(unom: int, date: datetime.datetime, conn):
     odpu['volume1forhour'] = odpu['Объём поданого теплоносителя в систему ЦО'] / (odpu['Наработка часов счётчика'])
     odpu['volume2forhour'] = odpu['Объём обратного теплоносителя из системы ЦО'] / (odpu['Наработка часов счётчика'])
     odpu['q2forhour'] = odpu['Расход тепловой энергии'].astype(float) / (odpu['Наработка часов счётчика'])
-    odpu['difference_supply_return_mix_all'] = odpu['Разница между подачей и обраткой(Подмес)'].astype(float) / (odpu['Наработка часов счётчика']) * 24
-    odpu['difference_supply_return_leak_all'] = odpu['Разница между подачей и обраткой(Утечка)'].astype(float) / (odpu['Наработка часов счётчика']) * 24
-    odpu['temperature_supply_all'] = odpu['Температура подачи'].astype(float) / (odpu['Наработка часов счётчика']) * 24
-    odpu['temperature_return_all'] = odpu['Температура обратки'].astype(float) / (odpu['Наработка часов счётчика']) * 24
 
     return odpu
 
@@ -832,15 +704,26 @@ def collect_events(row, events):
     return row[feature2events]
 
 
+num2month = {
+    10: "october",
+    11: "november",
+    12: "december",
+    1: "january",
+    2: "february",
+    3: "march",
+    4: "april",
+    5: "may",
+    6: "june",
+    7: "july",
+    8: "august",
+    9: "september"
+}
 
 
 def collect_weather(row, weather):
     mon = num2month[row.month]
     day = "{:02d}".format(row.day)
-    try:
-        row['weather1'], row['weather2'] = weather[mon][day]
-    except:
-        row['weather1'], row['weather2'] = '', ''
+    row['weather1'], row['weather2'] = weather[mon][day]
     return row[['weather1', 'weather2']]
 
 
