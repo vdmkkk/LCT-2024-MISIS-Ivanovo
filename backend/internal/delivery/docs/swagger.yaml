@@ -16,6 +16,18 @@ definitions:
     properties:
       Rank:
         type: integer
+      bti_address:
+        $ref: '#/definitions/null.String'
+      full_address:
+        $ref: '#/definitions/null.String'
+      geoData:
+        items:
+          items:
+            items:
+              type: number
+            type: array
+          type: array
+        type: array
       hours:
         type: integer
       unom:
@@ -59,12 +71,21 @@ definitions:
         type: string
       id:
         type: integer
+      payload: {}
     type: object
   models.IncidentUpdate:
     properties:
       id:
         type: integer
       payload: {}
+    type: object
+  null.String:
+    properties:
+      string:
+        type: string
+      valid:
+        description: Valid is true if String is not NULL
+        type: boolean
     type: object
 info:
   contact: {}
@@ -79,6 +100,12 @@ paths:
         name: unom
         required: true
         type: integer
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -141,6 +168,12 @@ paths:
       - description: ctp_id STRING
         in: query
         name: ctp_id
+        required: true
+        type: string
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
         required: true
         type: string
       produces:
@@ -208,6 +241,12 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/models.GeoDataFilter'
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -272,6 +311,12 @@ paths:
         name: id
         required: true
         type: integer
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -304,6 +349,12 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/models.IncidentCreate'
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -336,6 +387,12 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/models.IncidentUpdate'
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -362,6 +419,13 @@ paths:
     get:
       consumes:
       - application/json
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -396,6 +460,12 @@ paths:
         name: unom
         required: true
         type: integer
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -428,6 +498,12 @@ paths:
       - description: Incident create
         in: query
         name: start_date
+        required: true
+        type: string
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
         required: true
         type: string
       produces:

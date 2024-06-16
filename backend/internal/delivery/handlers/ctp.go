@@ -25,6 +25,7 @@ func InitCtpHandler(ctpServ service.Ctp) CtpHandler {
 // @Accept  json
 // @Produce  json
 // @Param ctp_id query string true "ctp_id STRING"
+// @Param Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 200 {object} int "Successfully"
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 500 {object} map[string]string "Internal server error"

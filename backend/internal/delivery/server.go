@@ -10,6 +10,7 @@ import (
 	"lct/internal/repository"
 	"lct/internal/service"
 	"lct/pkg/log"
+	"lct/pkg/security"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -21,9 +22,12 @@ func Start(db *sqlx.DB, logger *log.Logs) {
 	docs.SwaggerInfo.BasePath = "/"
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	mdw := middleware.InitMiddleware(logger)
+	jwtUtil := security.InitJWTUtil()
+
+	mdw := middleware.InitMiddleware(logger, jwtUtil)
 
 	r.Use(mdw.CORSMiddleware())
+	r.Use(mdw.Authorization())
 
 	mlPredictRepo := repository.InitMlPredictRepo(db)
 

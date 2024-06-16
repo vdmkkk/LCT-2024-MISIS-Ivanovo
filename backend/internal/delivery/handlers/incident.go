@@ -27,6 +27,7 @@ func InitIncidentHandler(incidentServ service.Incident) IncidentHandler {
 // @Accept  json
 // @Produce  json
 // @Param data body models.IncidentCreate true "Incident create"
+// @Param Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 200 {object} int "Successfully"
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 500 {object} map[string]string "Internal server error"
@@ -57,6 +58,7 @@ func (i IncidentHandler) Create(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} []models.IncidentShowUp "Successfully"
+// @Param Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /incident/all [get]
@@ -79,6 +81,7 @@ func (i IncidentHandler) GetAll(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param id query int true "Incident create"
+// @Param Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 200 {object} models.Incident "Successfully"
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 500 {object} map[string]string "Internal server error"
@@ -109,6 +112,7 @@ func (i IncidentHandler) GetByID(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param unom query int true "Unom"
+// @Param Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 200 {object} []models.Incident "Successfully"
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 500 {object} map[string]string "Internal server error"
@@ -139,6 +143,7 @@ func (i IncidentHandler) GetByUNOM(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param data body models.IncidentUpdate true "Incident update"
+// @Param Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 200 {object} int "Successfully"
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 500 {object} map[string]string "Internal server error"

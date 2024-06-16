@@ -10,8 +10,9 @@ type Middleware struct {
 	jwtUtil security.JWTUtil
 }
 
-func InitMiddleware(logger *log.Logs) Middleware {
+func InitMiddleware(logger *log.Logs, jwtUtil security.JWTUtil) Middleware {
 	return Middleware{
-		logger: logger,
+		logger:  logger,
+		jwtUtil: jwtUtil,
 	}
 }
