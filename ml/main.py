@@ -55,9 +55,9 @@ def authorize(token: str) -> bool:
         else:
             raise jwt_exceptions.DecodeError
     except ExpiredSignatureError:
-        raise ExpiredSignatureError("JWT expired")
+        raise HTTPException(401, detail='jwt expired')
     except jwt_exceptions.DecodeError:
-        raise jwt_exceptions.DecodeError("Error on parsing JWT")
+        raise HTTPException(401, detail='wrong jwt')
 
 
 async def authorization_middleware(request: Request, call_next):
