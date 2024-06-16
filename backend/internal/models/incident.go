@@ -1,5 +1,7 @@
 package models
 
+import "github.com/guregu/null/v5"
+
 type IncidentShowUp struct {
 	ID          int         `json:"id"`
 	Coordinates []float64   `json:"coordinates"`
@@ -8,9 +10,12 @@ type IncidentShowUp struct {
 }
 
 type HandledUnom struct {
-	Unom          int `json:"unom"`
-	HoursToCool   int `json:"hours"`
-	PriorityGroup int `json:"Rank"`
+	Unom          int         `json:"unom"`
+	HoursToCool   int         `json:"hours"`
+	PriorityGroup int         `json:"Rank"`
+	BtiAddress    null.String `json:"bti_address"`
+	FullAddress   null.String `json:"full_address"`
+	GeoData       [][][]float64
 }
 
 type IncidentBase struct {

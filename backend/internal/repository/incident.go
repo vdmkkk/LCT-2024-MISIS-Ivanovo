@@ -144,10 +144,12 @@ func (i incidentRepo) GetAll(ctx context.Context) ([]models.IncidentShowUp, erro
 }
 
 func (i incidentRepo) GetByID(ctx context.Context, id int) (models.Incident, error) {
-	query := `SELECT i.id, to_json(coordinates), payload, ctp_id, unom, hours_to_cool, priority_group 
+	query := `SELECT i.id, to_json(coordinates), payload, ctp_id, hu.unom, hours_to_cool, priority_group, b.bti_address, 
+       b.full_address, to_json(b.geo_data)
 	FROM incidents i
 	LEFT JOIN incidents_handled_unoms ihu on i.id = ihu.incident_id
 	LEFT JOIN handled_unoms hu on hu.id = ihu.handled_unom
+	LEFT JOIN buildings b on hu.unom = b.unom
 	WHERE i.id = $1`
 
 	rows, err := i.db.QueryContext(ctx, query, id)
@@ -161,9 +163,11 @@ func (i incidentRepo) GetByID(ctx context.Context, id int) (models.Incident, err
 		var handledUnom models.HandledUnom
 		var coordinatesJSON []byte
 		var payloadJSON []byte
+		var geoDataJSON []byte
 
 		err = rows.Scan(&incident.ID, &coordinatesJSON, &payloadJSON, &incident.CtpID,
-			&handledUnom.Unom, &handledUnom.HoursToCool, &handledUnom.PriorityGroup)
+			&handledUnom.Unom, &handledUnom.HoursToCool, &handledUnom.PriorityGroup, &handledUnom.BtiAddress,
+			&handledUnom.FullAddress, &geoDataJSON)
 		if err != nil {
 			return models.Incident{}, err
 		}
@@ -180,6 +184,17 @@ func (i incidentRepo) GetByID(ctx context.Context, id int) (models.Incident, err
 			if err != nil {
 				return models.Incident{}, err
 			}
+		}
+
+		err = json.Unmarshal(geoDataJSON, &handledUnom.GeoData)
+		if err != nil {
+			var coordinatesFourDims [][][][]float64
+			err = json.Unmarshal(geoDataJSON, &coordinatesFourDims)
+			if err != nil {
+				return models.Incident{}, err
+			}
+
+			handledUnom.GeoData = *FlatMap(coordinatesFourDims)
 		}
 
 		handledUnoms = append(handledUnoms, handledUnom)
