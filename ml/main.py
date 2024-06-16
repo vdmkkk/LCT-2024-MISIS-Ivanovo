@@ -1433,26 +1433,29 @@ def get_future_temperature():
     :param lon: Долгота
     :return: Прогноз погоды
     """
+    
     # Получаем текущую дату и время
-    now = int(get_current_temperature())
+    # now = int(get_current_temperature())
 
-    url = f'https://api.weather.yandex.ru/v2/forecast?lat=55.787715&lon=37.775631'
-    headers = {'X-Yandex-Weather-Key': "0281e1b2-1d86-4735-a2b6-6a77b605fb86"}
+    # url = f'https://api.weather.yandex.ru/v2/forecast?lat=55.787715&lon=37.775631'
+    # headers = {'X-Yandex-Weather-Key': "0281e1b2-1d86-4735-a2b6-6a77b605fb86"}
 
-    response = requests.get(url, headers=headers)
+    # response = requests.get(url, headers=headers)
 
-    if response.status_code == 200:
-        return {
-            't_in_5_hours': now,
-            't_in_10_hours': now,
-            't_in_15_hours': now,
-            't_in_20_hours': now,
-            't_in_25_hours': now,
-            't_in_30_hours': now
-        }
-    else:
-        print(f"Ошибка при запросе: {response.status_code}")
-        return None
+    # if response.status_code == 200:
+    #     return {
+    #         't_in_5_hours': now,
+    #         't_in_10_hours': now,
+    #         't_in_15_hours': now,
+    #         't_in_20_hours': now,
+    #         't_in_25_hours': now,
+    #         't_in_30_hours': now
+    #     }
+    # else:
+    #     print(f"Ошибка при запросе: {response.status_code}")
+    #     return None
+    weather = pd.read_csv("weather_forecast.csv")
+    print(weather)
 
 
 def connect_to_db():
@@ -1531,5 +1534,6 @@ with open(material_parameters_file_path, 'r', encoding='utf-8') as file:
     material_parameters_dict = json.load(file)
 
 
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+# if __name__ == "__main__":
+#     uvicorn.run(app, host="0.0.0.0", port=8000)
+get_future_temperature()
