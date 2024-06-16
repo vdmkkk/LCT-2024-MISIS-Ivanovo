@@ -11,6 +11,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_HOST: "postgres-database"
       ML_APP_HOST: "ml-app"
+      CURRENT_DATE: "2024-04-01T00:00:00"
     depends_on:
       postgres-database:
         condition: service_healthy

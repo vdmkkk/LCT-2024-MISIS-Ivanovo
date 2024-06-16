@@ -9,15 +9,16 @@ import (
 )
 
 const (
-	DBName     = "DB_NAME"
-	DBUser     = "DB_USER"
-	DBPassword = "DB_PASSWORD"
-	DBPort     = "DB_PORT"
-	DBHost     = "DB_HOST"
-	TimeOut    = "TIME_OUT"
-	MlAppHost  = "ML_APP_HOST"
-	MlAppPort  = "ML_APP_PORT"
-	Secret     = "secret"
+	DBName      = "DB_NAME"
+	DBUser      = "DB_USER"
+	DBPassword  = "DB_PASSWORD"
+	DBPort      = "DB_PORT"
+	DBHost      = "DB_HOST"
+	TimeOut     = "TIME_OUT"
+	MlAppHost   = "ML_APP_HOST"
+	MlAppPort   = "ML_APP_PORT"
+	Secret      = "secret"
+	CurrentDate = "CURRENT_DATE"
 )
 
 func InitConfig() {
