@@ -1,7 +1,11 @@
 <script setup lang="ts">
+// @ts-nocheck //
 import IncidentType from 'src/types/IncidentType';
 import getIncidentsById from 'src/api/getIncidentsById';
-import { ref, watch, defineProps, defineEmits, onMounted } from 'vue';
+import { ref, watch, defineProps, defineEmits, onMounted, computed } from 'vue';
+import updateIncidents from 'src/api/updateIncident';
+import { useQuasar } from 'quasar';
+const $q = useQuasar();
 
 const props = defineProps<{
   modelValue: boolean;
@@ -25,6 +29,15 @@ const setOpen = () => {
       .then((res) => (incidentData.value = res))
       .catch();
   }
+  description.value = incidentData.value?.payload?.['description'];
+  date_start.value = formatISODate(incidentData.value?.payload?.['date_start']);
+  date_end.value = incidentData.value?.payload?.['date_end']
+    ? formatISODate(incidentData.value?.payload?.['date_end'])
+    : 'мм:чч дд:мм:гггг';
+  incidentClosed.value = incidentData.value?.payload?.['date_end']
+    ? true
+    : false;
+  console.warn(incidentClosed.value);
 };
 
 const setClose = () => {
@@ -39,6 +52,7 @@ const incident = ref<number>();
 const description = ref<string>();
 const date_start = ref<Date>();
 const date_end = ref<Date>();
+const incidentClosed = ref<boolean>();
 
 watch(props, setOpen);
 watch(showDialog, setClose);
@@ -55,13 +69,114 @@ const getPriorityStyles = (priority_group: number) => {
       return { backgroundColor: '#6dceea', color: 'black' };
   }
 };
+
+const getStatus = (date_end: string | null) => {
+  if (date_end)
+    return {
+      backgroundColor: '#f00',
+      borderRadius: '50%',
+      width: '20px',
+      height: '20px',
+    };
+  else
+    return {
+      backgroundColor: '#0f0',
+      borderRadius: '50%',
+      width: '20px',
+      height: '20px',
+    };
+};
+
+function formatISODate(isoString) {
+  const date = new Date(isoString);
+
+  const pad = (num) => (num < 10 ? '0' + num : num);
+
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  const day = pad(date.getDate());
+  const month = pad(date.getMonth() + 1); // Months are zero-based
+  const year = date.getFullYear();
+
+  return `${hours}:${minutes} ${day}-${month}-${year}`;
+}
+
+function reverseFormatDate(formattedDate) {
+  // Extract the components using a regular expression
+  const regex = /(\d{2}):(\d{2}) (\d{2})-(\d{2})-(\d{4})/;
+  const match = formattedDate.match(regex);
+
+  if (!match) {
+    throw new Error('Invalid date format');
+  }
+
+  const [, hours, minutes, day, month, year] = match;
+
+  // Create a Date object
+  const date = new Date(Date.UTC(year, month - 1, day, hours, minutes, 0, 0));
+
+  // Convert to ISO string
+  return date.toISOString();
+}
+
+const isReadyToSave = () => {
+  if (incidentData.value?.payload?.['date_end'] ? true : false) {
+    if (!incidentClosed.value) return true;
+    if (
+      description.value !== incidentData.value?.payload.description ||
+      date_start.value !==
+        formatISODate(incidentData.value?.payload?.['date_start']) ||
+      date_end.value !==
+        formatISODate(incidentData.value?.payload?.['date_end'])
+    )
+      return true;
+  }
+  if (!incidentData.value?.payload?.['date_end'] ? true : false) {
+    if (incidentClosed.value && date_end.value !== 'мм:чч дд:мм:гггг')
+      return true;
+    if (
+      (!incidentClosed.value &&
+        description.value !== incidentData.value?.payload.description) ||
+      date_start.value !==
+        formatISODate(incidentData.value?.payload?.['date_start'])
+    )
+      return true;
+  }
+};
+
+const isSaveButtonDisabled = computed(() => !isReadyToSave());
+
+const handleSave = async () => {
+  const finalObj = {
+    coordinates: incidentData.value?.ctp_center,
+    ctp_center: incidentData.value?.ctp_center,
+    ctp_id: incidentData.value?.ctp_id,
+    handled_unoms: incidentData.value?.handled_unoms,
+    id: incidentData.value?.id,
+    payload: {
+      date_end: incidentClosed.value ? reverseFormatDate(date_end.value) : '',
+      date_start: reverseFormatDate(date_start.value),
+      description: description.value,
+    },
+  };
+
+  $q.loading.show();
+  await updateIncidents(finalObj)
+    .then((res) => {
+      $q.loading.hide();
+      showDialog.value = false;
+    })
+    .catch((e) => {
+      console.error(e);
+    });
+};
 </script>
 
 <template>
   <q-dialog v-model="showDialog">
     <q-card style="min-width: 60vw; border-radius: 10px">
       <q-card-section style="display: flex; justify-content: space-between">
-        <div class="text-h5">Инцидент</div>
+        <div class="text-h5">Авария #{{ incidentData.id }}</div>
         <i
           class="material-icons"
           style="font-size: 24px"
@@ -70,9 +185,98 @@ const getPriorityStyles = (priority_group: number) => {
         >
       </q-card-section>
 
+      <div style="display: flex; align-items: center">
+        <div :style="getStatus(incidentClosed)" />
+        <h3 style="margin: 0">
+          Статус: {{ incidentClosed ? 'Неакивна' : 'Активна' }}
+        </h3>
+      </div>
+
       <div class="incidents">
         <h2>ЦТП: {{ incidentData?.ctp_id }}</h2>
         <p>ID: {{ incidentData?.id }}</p>
+        <q-input outlined v-model="description" label="Описание" />
+        <div style="display: flex">
+          <p>Закрыть аварию</p>
+          <q-toggle v-model="incidentClosed" />
+        </div>
+        <p>Время регистрации</p>
+        <div class="q-pa-md" style="max-width: 300px">
+          <q-input filled v-model="date_start">
+            <template v-slot:prepend>
+              <q-icon name="event" class="cursor-pointer">
+                <q-popup-proxy
+                  cover
+                  transition-show="scale"
+                  transition-hide="scale"
+                >
+                  <q-date v-model="date_start" mask="HH:mm DD-MM-YYYY">
+                    <div class="row items-center justify-end">
+                      <q-btn v-close-popup label="Close" color="primary" flat />
+                    </div>
+                  </q-date>
+                </q-popup-proxy>
+              </q-icon>
+            </template>
+
+            <template v-slot:append>
+              <q-icon name="access_time" class="cursor-pointer">
+                <q-popup-proxy
+                  cover
+                  transition-show="scale"
+                  transition-hide="scale"
+                >
+                  <q-time
+                    v-model="date_start"
+                    mask="HH:mm DD-MM-YYYY"
+                    format24h
+                  >
+                    <div class="row items-center justify-end">
+                      <q-btn v-close-popup label="Close" color="primary" flat />
+                    </div>
+                  </q-time>
+                </q-popup-proxy>
+              </q-icon>
+            </template>
+          </q-input>
+        </div>
+
+        <p>Время закрытия</p>
+        <div class="q-pa-md" style="max-width: 300px">
+          <q-input :disable="!incidentClosed" filled v-model="date_end">
+            <template v-slot:prepend>
+              <q-icon name="event" class="cursor-pointer">
+                <q-popup-proxy
+                  cover
+                  transition-show="scale"
+                  transition-hide="scale"
+                >
+                  <q-date v-model="date_end" mask="HH:mm DD-MM-YYYY">
+                    <div class="row items-center justify-end">
+                      <q-btn v-close-popup label="Close" color="primary" flat />
+                    </div>
+                  </q-date>
+                </q-popup-proxy>
+              </q-icon>
+            </template>
+
+            <template v-slot:append>
+              <q-icon name="access_time" class="cursor-pointer">
+                <q-popup-proxy
+                  cover
+                  transition-show="scale"
+                  transition-hide="scale"
+                >
+                  <q-time v-model="date_end" mask="HH:mm DD-MM-YYYY" format24h>
+                    <div class="row items-center justify-end">
+                      <q-btn v-close-popup label="Close" color="primary" flat />
+                    </div>
+                  </q-time>
+                </q-popup-proxy>
+              </q-icon>
+            </template>
+          </q-input>
+        </div>
         <!-- TODO: Обрезать эту хуиту до 8 знаков  -->
         <p>
           Координаты: {{ incidentData?.coordinates[0] }}
@@ -93,7 +297,9 @@ const getPriorityStyles = (priority_group: number) => {
           <p>Часов до остывания: {{ hours_to_cool }}</p>
           <p>Приоритет: {{ priority_group }}</p>
         </div>
-        <p style="margin-top: 30px">{{ incidentData?.payload }}</p>
+        <q-btn :disable="isSaveButtonDisabled" @click="handleSave"
+          >Сохранить</q-btn
+        >
       </div>
     </q-card>
   </q-dialog>

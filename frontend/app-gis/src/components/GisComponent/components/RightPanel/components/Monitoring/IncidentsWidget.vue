@@ -66,6 +66,7 @@ const handleOpenDialog = () => {
       v-for="{
         coordinates: coordinates,
         ctp_id: ctp_id,
+        ctp_center: ctp_center,
         handled_unoms: handled_unoms,
         id: id,
         payload: payload,
@@ -159,6 +160,7 @@ const handleOpenDialog = () => {
         :data="{
           coordinates: coordinates,
           ctp_id: ctp_id,
+          ctp_center: ctp_center,
           handled_unoms: handled_unoms,
           id: id,
           payload: payload,
