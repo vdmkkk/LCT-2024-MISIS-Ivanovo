@@ -5,13 +5,11 @@ import { toRefs, computed, onMounted, watch, ref } from 'vue';
 
 import getBuildingByUnom from 'src/api/getBuildingByUnom';
 import BuildingType from 'src/types/BuildingsType';
-import NavigationMonitoringComponent from './components/Monitoring/NavigatorMonitoringComponent.vue';
-import NavigatorIncidentsComponent from './components/Incidents/NavigatorIncidentsComponent.vue';
+import NavigationMonitoringComponent from './components/NavigatorMonitoringComponent.vue';
+import NavigatorIncidentsComponent from './components/NavigatorIncidentsComponent.vue';
+import NavigatorPredictComponent from './components/NavigatorPredictComponent.vue';
 
-import {
-  RightPanelMonitoringWidgets,
-  RightPanelIncidentsWidgets,
-} from 'src/types/NavigationButtonsType';
+import { RightPanelWidgets } from 'src/types/NavigationButtonsType';
 import getIncidentsById from 'src/api/getIncidentsById';
 import IncidentType from 'src/types/IncidentType';
 
@@ -58,6 +56,12 @@ watch(props, updateData);
   <NavigatorIncidentsComponent
     :open="
       (!!props.placeId || props.placeId == 0) &&
+      optionsStore.mapMode == 'incident'
+    "
+  />
+  <NavigatorPredictComponent
+    :open="
+      (!!props.placeId || props.placeId == 0) &&
       optionsStore.mapMode == 'predict'
     "
   />
@@ -86,7 +90,7 @@ watch(props, updateData);
     </h2>
     <q-separator color="red" />
     <component
-      :is="RightPanelMonitoringWidgets[optionsStore.rightPanelOption]"
+      :is="RightPanelWidgets[optionsStore.rightPanelOption]"
       v-bind="{ object: building }"
     ></component>
   </div>

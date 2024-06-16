@@ -15,12 +15,15 @@ import CreateArea from 'src/composables/createArea';
 import getHeatmapColor from 'src/composables/getHexForHeatmap';
 import Highcharts from 'highcharts';
 import IncidentDialog from 'src/dialogs/IncidentDialog.vue';
+import CreateIncidentDialog from 'src/dialogs/CreateIncidentDialog.vue';
 import OpenIncidentDialog from './components/OpenIncidentsDialog.vue';
 import PredictMode from './components/PredictMode.vue';
 import InfoPanel from './components/InfoPanel.vue';
 import PredictTimeline from './components/PredictTimeline.vue';
 import LegendWidget from './components/LegendWidget.vue';
 import CreateIncident from './components/CreateIncident.vue';
+import IncidentMode from './components/IncidentMode.vue';
+import getIncidentsById from 'src/api/getIncidentsById';
 
 const $q = useQuasar();
 const colors = Highcharts.getOptions().colors;
@@ -40,18 +43,33 @@ const currIncident = ref<number | null>();
 const currMarker = ref<string | number | null>();
 const currPredictDate = ref('2024-04-01T00:00:00');
 const predictMode = ref(0);
+const incidentMode = ref(0);
 const optionsStore = useOptionsStore();
 
 const clickMap = () => {
   if (optionsStore.mapMode == 'monitoring') {
     currPolygon.value = null;
     currMarker.value = null;
-  } else {
+  }
+  if (optionsStore.mapMode == 'incident') {
     if (!showIncidentDialog.value) {
       currMarker.value = null;
       currIncident.value = null;
     }
+    currPolygon.value = null;
+
+    if (polygonsRef.value.length > 0) {
+      polygonsRef.value.forEach((polygon) => {
+        toRaw(polygon).setMap(null);
+        toRaw(polygon).setPath([]);
+      });
+      polygonsRef.value = [];
+    }
   }
+  if (optionsStore.mapMode == 'predict') {
+    currPolygon.value = null;
+  }
+
   if (optionsStore.leftPanelOption == 'layers')
     optionsStore.setLeftPanelOption(null);
 };
@@ -204,13 +222,25 @@ const handleBuildingRender = (buidlings: GeoType3, predictDate: string) => {
           }),
           strokeColor:
             predictDate === ''
-              ? '#9c9c9c'
+              ? '#db8d78'
+              : predictMode.value == 5
+              ? getHeatmapColor(
+                  // @ts-ignore //
+                  probabilites.reduce((partialSum, a) => partialSum + a, 0) -
+                    probabilites[3]
+                )
               : getHeatmapColor(probabilites[predictMode.value]),
           strokeOpacity: 0.8,
           strokeWeight: 2,
           fillColor:
             predictDate === ''
-              ? '#9c9c9c'
+              ? '#db8d78'
+              : predictMode.value == 5
+              ? getHeatmapColor(
+                  // @ts-ignore //
+                  probabilites.reduce((partialSum, a) => partialSum + a, 0) -
+                    probabilites[3]
+                )
               : getHeatmapColor(probabilites[predictMode.value]),
           fillOpacity: 0.35,
           zIndex: 999,
@@ -265,12 +295,58 @@ const getDataMonitoring = async (predictDate = '') => {
     });
 };
 
+const handleIncidentPolygons = (unoms: any) => {
+  currPolygon.value = null;
+
+  if (polygonsRef.value.length > 0) {
+    polygonsRef.value.forEach((polygon) => {
+      toRaw(polygon).setMap(null);
+      toRaw(polygon).setPath([]);
+    });
+    polygonsRef.value = [];
+  }
+  const getColorsByRank = (rank: number) => {
+    if (rank == 1) return '#eb6e6e';
+    else if (rank == 2) return '#ebe46e';
+    else return '#92eb6e';
+  };
+  var maxHours = 0;
+  // @ts-ignore //
+  unoms.forEach(({ hours }) => {
+    if (hours > maxHours) maxHours = hours;
+  });
+  unoms.forEach(({ unom: unom, GeoData: coords, Rank: rank, hours }: any) => {
+    coords.forEach((newObj: any) => {
+      const newPolygon = new google.maps.Polygon({
+        paths: newObj.map(([lat, lng]: [number, number]) => {
+          return { lat: lng, lng: lat };
+        }),
+        strokeColor:
+          incidentMode.value == 1
+            ? getColorsByRank(rank)
+            : getHeatmapColor(1 - hours / maxHours),
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor:
+          incidentMode.value == 1
+            ? getColorsByRank(rank)
+            : getHeatmapColor(1 - hours / maxHours),
+        fillOpacity: 0.35,
+        zIndex: 999,
+      });
+      polygonsRef.value.push(newPolygon);
+      newPolygon.setMap(mapRef.value);
+      newPolygon.addListener('click', () => (currPolygon.value = unom));
+    });
+  });
+};
+
 const handleMarkersIncident = (incidents: any) => {
   if (!mapRef.value) return;
 
   const newMarkers = [];
   for (let i = 0; i < incidents.length; i++) {
-    const { ctp_id, coordinates: position, id } = incidents[i];
+    const { ctp_id, coordinates: position, id, handled_unoms } = incidents[i];
     if (position) {
       const marker = new google.maps.Marker({
         position: { lat: position[1], lng: position[0] },
@@ -283,10 +359,18 @@ const handleMarkersIncident = (incidents: any) => {
         },
       });
 
+      console.log(handled_unoms);
+
       marker.addListener('click', () => {
         currIncident.value = currMarker.value === i.toString() ? null : id;
         currMarker.value =
           currMarker.value === i.toString() ? null : i.toString();
+        if (currMarker.value === i.toString())
+          getIncidentsById(id).then((res) => {
+            handleIncidentPolygons(res['handled_unoms']);
+          });
+
+        // else handleIncidentPolygons(handled_unoms);
         console.log(currIncident.value);
       });
 
@@ -389,6 +473,15 @@ onMounted(() => {
 });
 
 watch(predictMode, loadData);
+watch(currPredictDate, loadData);
+watch(incidentMode, () => {
+  if (currIncident.value) {
+    console.warn(currIncident.value);
+    getIncidentsById(currIncident.value).then((res) => {
+      handleIncidentPolygons(res['handled_unoms']);
+    });
+  }
+});
 </script>
 
 <template>
@@ -399,9 +492,11 @@ watch(predictMode, loadData);
   />
   <InfoPanel />
   <PredictMode v-model="predictMode" />
+  <IncidentMode :shown="currIncident" v-model="incidentMode" />
   <PredictTimeline v-model="currPredictDate" />
-  <LegendWidget />
+  <LegendWidget :incident-id="currIncident" :incident-mode="incidentMode" />
   <CreateIncident @click="showIncidentCreateDialog = true" />
+  <CreateIncidentDialog v-model="showIncidentCreateDialog" />
   <IncidentDialog v-model="showIncidentDialog" :incident-id="currIncident" />
   <RighPanel :place-id="currPolygon!" />
   <LeftPanel />

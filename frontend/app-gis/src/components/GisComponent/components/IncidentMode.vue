@@ -5,6 +5,7 @@ import { useOptionsStore } from 'src/stores/optionsStore';
 const optionsStore = useOptionsStore();
 const props = defineProps<{
   modelValue: number;
+  shown: number | null | undefined;
 }>();
 
 const emits = defineEmits(['update:modelValue']);
@@ -24,8 +25,8 @@ watch(mode, changeMode);
 
 const containerClass = computed(() => ({
   container: true,
-  open: optionsStore.mapMode == 'predict',
-  closed: optionsStore.mapMode != 'predict',
+  open: !!props.shown || props.shown == 0,
+  closed: !props.shown && props.shown != 0,
   'shadow-1': true,
 }));
 </script>
@@ -37,11 +38,8 @@ const containerClass = computed(() => ({
       toggle-color="red-10"
       style="height: 70px; border-radius: 30px"
       :options="[
-        { label: 'T < min', value: 0 },
-        { label: 'T > max', value: 1 },
-        { label: 'Давление не в норме', value: 2 },
-        { label: 'Утечка', value: 4 },
-        { label: 'Произойдет авария', value: 5 },
+        { label: 'По остыванию', value: 0 },
+        { label: 'По приоритету', value: 1 },
       ]"
     />
   </div>

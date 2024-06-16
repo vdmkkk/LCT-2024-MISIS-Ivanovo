@@ -30,6 +30,10 @@ const formattedDate = computed(() => {
   return format(date, 'dd-MM-yyyy');
 });
 
+const rawDate = computed(() => {
+  return datePositions[sliderValue.value];
+});
+
 const emits = defineEmits(['update:modelValue']);
 
 // Method to update the date label
@@ -38,7 +42,10 @@ const updateDate = (value: number) => {
 };
 
 const emitData = () => {
-  emits('update:modelValue', formattedDate.value);
+  emits(
+    'update:modelValue',
+    rawDate.value.toISOString().split('T')[0] + 'T00:00:00'
+  );
 };
 
 watch(formattedDate, emitData);
