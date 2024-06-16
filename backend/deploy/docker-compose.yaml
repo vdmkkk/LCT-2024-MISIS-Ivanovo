@@ -45,7 +45,7 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_HOST: "postgres-database"
-      API_KEY: "d347483b-506b-451a-8071-87074574be00"
+      API_KEY: "586eb55e-56a6-4129-882e-2dcd1a040086"
     depends_on:
       postgres-database:
         condition: service_healthy
