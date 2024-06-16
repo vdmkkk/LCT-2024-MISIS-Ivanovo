@@ -2,8 +2,10 @@ import pandas as pd
 import datetime
 import json
 import requests
+import math
 
 from catboost import CatBoostClassifier
+from catboost import CatBoostRegressor
 import numpy as np
 import psycopg2
 
@@ -1352,7 +1354,7 @@ class CatBoostModel:
                     return 1
                 else:
                     # Формула для расчета приоритета
-                    return 4 - ((weight + efficiency_weight + working_weight) / hours)
+                    return (hours / (weight + efficiency_weight + working_weight))
             else:
                 return None
 
@@ -1413,7 +1415,7 @@ def get_current_temperature():
     :return: Прогноз погоды
     """
     url = f'https://api.weather.yandex.ru/v2/forecast?lat=55.787715&lon=37.775631'
-    headers = {'X-Yandex-Weather-Key': "83f2c69f-542f-4a2a-b1dc-b32b2d01e7ac"}
+    headers = {'X-Yandex-Weather-Key': "0281e1b2-1d86-4735-a2b6-6a77b605fb86"}
 
     response = requests.get(url, headers=headers)
 
@@ -1435,7 +1437,7 @@ def get_future_temperature():
     now = int(get_current_temperature())
 
     url = f'https://api.weather.yandex.ru/v2/forecast?lat=55.787715&lon=37.775631'
-    headers = {'X-Yandex-Weather-Key': "83f2c69f-542f-4a2a-b1dc-b32b2d01e7ac"}
+    headers = {'X-Yandex-Weather-Key': "0281e1b2-1d86-4735-a2b6-6a77b605fb86"}
 
     response = requests.get(url, headers=headers)
 
