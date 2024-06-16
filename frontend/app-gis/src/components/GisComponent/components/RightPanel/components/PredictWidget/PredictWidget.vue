@@ -28,8 +28,8 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .predict-container {
-  height: inherit;
-  overflow-y: scroll;
+  max-height: 80vh;
+  overflow-y: auto;
   h1 {
     font-size: 1.9em;
     font-weight: 500;

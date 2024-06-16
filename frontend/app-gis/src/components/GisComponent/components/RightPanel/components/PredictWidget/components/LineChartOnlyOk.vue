@@ -58,7 +58,7 @@ onMounted(() => {
         color: '#c00',
         tooltip: {
           pointFormatter: function () {
-            return `<span style="color:${this.color}">\u25CF</span> ОК: ${this.y}% <br/>`;
+            return `<span style="color:${this.color}">\u25CF</span> Произойдет авария: ${this.y}% <br/>`;
           },
         },
         data: Object.values(props.data).map((arr) =>

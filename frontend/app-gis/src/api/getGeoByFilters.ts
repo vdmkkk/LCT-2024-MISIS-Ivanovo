@@ -1,7 +1,7 @@
 import { api } from 'src/boot/axios';
 import { useOptionsStore } from 'src/stores/optionsStore';
 
-const getGeoByFilters = async () => {
+const getGeoByFilters = async (date = '') => {
   const optionsStore = useOptionsStore();
   const body = {
     consumer_type: 0,
@@ -37,6 +37,11 @@ const getGeoByFilters = async () => {
   }
   if (optionsStore.filters.get('consumer') == 'МКД') {
     body.consumer_type = 1;
+  }
+
+  if (date !== '') {
+    // @ts-ignore //
+    body.date = date;
   }
 
   return await api
