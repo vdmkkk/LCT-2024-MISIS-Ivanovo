@@ -420,7 +420,7 @@ def get_predict_for_all(model: CatBoostClassifier, date: datetime.datetime, conn
     odpu = get_odpu(date, conn)
     events2preds[ftrs2odpu] = events2preds.apply(lambda x: add_opdu_features(odpu, x), axis=1)
 
-    with open('weather.json', 'r', encoding='utf-8') as file:
+    with open('./configs/weather.json', 'r', encoding='utf-8') as file:
         weather = json.load(file)
     events2preds[['weather1', 'weather2']] = events2preds.apply(lambda x: collect_weather(x, weather), axis=1)
 
@@ -482,7 +482,7 @@ def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.dat
     odpu = get_odpu_one(unom, date, conn)
     events2preds[ftrs2odpu] = events2preds.apply(lambda x: add_opdu_features(odpu, x), axis=1)
 
-    with open('weather.json', 'r', encoding='utf-8') as file:
+    with open('./configs/weather.json', 'r', encoding='utf-8') as file:
         weather = json.load(file)
     events2preds[['weather1', 'weather2']] = events2preds.apply(lambda x: collect_weather(x, weather), axis=1)
 
@@ -628,7 +628,7 @@ def get_stats_from_bd(date, conn):
     ans['count_collect_tasks'] = len(events[events['Дата и время завершения события'] <= date])
     ans['count_current_tasks'] = len(events[events['Дата создания во внешней системе'] <= date])
 
-    with open('weather.json', 'r', encoding='utf-8') as file:
+    with open('./configs/weather.json', 'r', encoding='utf-8') as file:
         weather = json.load(file)
 
     mon = num2month[date.month]
@@ -1109,6 +1109,12 @@ def collect_events(row, events):
         - Фильтрует события по УНОМ и времени создания внешней системы.
         - Группирует события по наименованию и месяцу создания и считает количество событий.
         - Добавляет количество событий разных типов и за разные месяцы в исходную строку датасета.
+
+    Пример:
+        >>> row = {'УНОМ': 123456789, 'Дата создания во внешней системе': datetime.datetime(2024, 6, 17)}
+        >>> events_df = pd.DataFrame(...)
+        >>> updated_row = collect_events(row, events_df)
+        >>> print(updated_row)
     """
     local_events = events[events['УНОМ'] == row['УНОМ']]
     curr_time = row['Дата создания во внешней системе']
@@ -1128,6 +1134,22 @@ def collect_events(row, events):
             row[f"month{month_num}_count"] = 0
 
     return row[feature2events]
+
+
+num2month = {
+    10: "october",
+    11: "november",
+    12: "december",
+    1: "january",
+    2: "february",
+    3: "march",
+    4: "april",
+    5: "may",
+    6: "june",
+    7: "july",
+    8: "august",
+    9: "september"
+}
 
 
 def collect_weather(row, weather):
@@ -1343,7 +1365,7 @@ def add_cyclic_features(df, col, max_val):
 
 
 class CatBoostModel:
-    def __init__(self, data, type_description_dict, material_parameters_dict, model_path='catboost.cbm'):
+    def __init__(self, data, type_description_dict, material_parameters_dict, model_path='./configs/catboost_for_house_cooling.cbm'):
         """
         Инициализация класса CatBoostModel.
 
@@ -1691,7 +1713,7 @@ def get_weather_forecast():
     # else:
     #     print(f"Ошибка при запросе: {response.status_code}")
     #     return None
-    weather = pd.read_csv("weather_forecast.csv")
+    weather = pd.read_csv("./configs/weather_forecast.csv")
     weather_forecast = weather['temperature'].head(6).tolist()
     return {
             't_in_5_hours': weather_forecast[0],
@@ -1757,7 +1779,7 @@ async def calc_cooldown(unoms: List[int]):
             t_outside = get_weather_forecast()
 
             # Получаем предсказания
-            catboost_model = CatBoostModel(database, type_description_dict, material_parameters_dict, model_path='catboost_for_house_cooling.cbm')
+            catboost_model = CatBoostModel(database, type_description_dict, material_parameters_dict, model_path='./configs/catboost_for_house_cooling.cbm')
             data_for_catboost = catboost_model.prepare_data_for_catboost(unoms, t_inside, t_outside)
             catboost_predictions = catboost_model.get_catboost_predictions(data_for_catboost)
             df_sorted = catboost_model.get_final_ranking(catboost_predictions)
@@ -1769,8 +1791,8 @@ async def calc_cooldown(unoms: List[int]):
             conn.close()
 
 
-type_description_file_path = "type_descriptions.json"
-material_parameters_file_path = "material_parameters.json"
+type_description_file_path = "./configs/type_descriptions.json"
+material_parameters_file_path = "./configs/material_parameters.json"
 
 with open(type_description_file_path, 'r', encoding='utf-8') as file:
     type_description_dict = json.load(file)
