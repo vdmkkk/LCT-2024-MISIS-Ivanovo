@@ -50,7 +50,20 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="data" class="report-container">
+  <div
+    v-if="
+      !!data
+        ? Object.keys(
+            Object.values({
+              predict: {},
+              incidents_count: {},
+              odpu_plot: {},
+            })[0]
+          ).length > 0
+        : !!data
+    "
+    class="report-container"
+  >
     <h1>Сводка</h1>
     <h2>Последнее обновление: </h2>
     <div v-for="[key, data] in Object.entries(data)" :key="key">
@@ -65,13 +78,13 @@ onMounted(() => {
             </div>
           </div>
           <div style="width: 30%">
-            <h3>
+            <h3 v-if="data">
               {{
                 Object.entries(data).toSorted((a, b) => {
                   const dateA = new Date(a[0].split('.').reverse().join('-'));
                   const dateB = new Date(b[0].split('.').reverse().join('-'));
                   return dateB - dateA;
-                })[0][1]
+                })?.[0]?.[1]
               }}
             </h3>
           </div>

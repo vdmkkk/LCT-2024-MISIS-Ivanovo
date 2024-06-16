@@ -10,7 +10,7 @@ const $q = useQuasar();
 const props = defineProps<{
   modelValue: boolean;
   data?: IncidentType;
-  incidentId?: number;
+  incidentId?: number | null;
 }>();
 
 onMounted(() => {

@@ -1,8 +1,9 @@
 import { api } from 'src/boot/axios';
+import IncidentType from 'src/types/IncidentType';
 
-const getAllPolygons = async (count: number) => {
+const createIncident = async (obj: IncidentType) => {
   return await api
-    .get(`/geo?count=${count}`)
+    .post('/incident', obj)
     .then((res) => {
       return res.data;
     })
@@ -11,4 +12,4 @@ const getAllPolygons = async (count: number) => {
     });
 };
 
-export default getAllPolygons;
+export default createIncident;

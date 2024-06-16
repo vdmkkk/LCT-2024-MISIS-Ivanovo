@@ -1,11 +1,7 @@
-import PassportWidget from 'src/components/GisComponent/components/RightPanel/components/Monitoring/PassportWidget.vue';
-import ReportWidget from 'src/components/GisComponent/components/RightPanel/components/Monitoring/ReportWidget.vue';
-import IncidentsWidget from 'src/components/GisComponent/components/RightPanel/components/Monitoring/IncidentsWidget.vue';
-import PredictWidget from 'src/components/GisComponent/components/RightPanel/components/Monitoring/PredictWidget/PredictWidget.vue';
-
-import IncidentWidget from 'src/components/GisComponent/components/RightPanel/components/Incidents/IncidentWidget.vue';
-import StatsWidget from 'src/components/GisComponent/components/RightPanel/components/Incidents/StatsWidget.vue';
-import UnomsWidget from 'src/components/GisComponent/components/RightPanel/components/Incidents/UnomsWidget.vue';
+import PassportWidget from 'src/components/GisComponent/components/RightPanel/components/PassportWidget.vue';
+import ReportWidget from 'src/components/GisComponent/components/RightPanel/components/ReportWidget.vue';
+import IncidentsWidget from 'src/components/GisComponent/components/RightPanel/components/IncidentsWidget.vue';
+import PredictWidget from 'src/components/GisComponent/components/RightPanel/components/PredictWidget/PredictWidget.vue';
 
 type NavigationMonitoringButtonType = {
   name: string;
@@ -19,18 +15,12 @@ type NavigationIncidentsButtonType = {
   logo: string;
 };
 
-const RightPanelMonitoringWidgets = {
+const RightPanelWidgets = {
   report: ReportWidget,
   passport: PassportWidget,
   incidents: IncidentsWidget,
   predicts: PredictWidget,
 };
 
-const RightPanelIncidentsWidgets = {
-  incident: IncidentWidget,
-  unoms: UnomsWidget,
-  stats: StatsWidget,
-};
-
-export { RightPanelMonitoringWidgets, RightPanelIncidentsWidgets };
+export { RightPanelWidgets };
 export type { NavigationMonitoringButtonType, NavigationIncidentsButtonType };
