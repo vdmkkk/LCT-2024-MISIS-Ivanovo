@@ -58,6 +58,8 @@ func getFromMLService(date string) (map[string][]float64, error) {
 		return nil, fmt.Errorf("error creating request: %v", err)
 	}
 
+	req.Header.Set("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjIxNDM4NzcsIklEIjoxLCJVc2VyVHlwZSI6IiJ9.4Dvv-2I4sFpwsBMEJA3HTjyh8PrbEtfgXikDx54xXog")
+
 	client := &http.Client{}
 
 	resp, err := client.Do(req)

@@ -9,10 +9,14 @@ from catboost import CatBoostClassifier, CatBoostRegressor
 import numpy as np
 import psycopg2
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import uvicorn
 import warnings
+
+from jwt import ExpiredSignatureError, decode as jwt_decode, exceptions as jwt_exceptions
+
 
 from typing import List
 
@@ -40,6 +44,45 @@ app.add_middleware(
 
 model = CatBoostClassifier()
 model.load_model('model_task1')
+
+
+def authorize(token: str) -> bool:
+    try:
+        if token == 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjIxNDM4NzcsIklEIjoxLCJVc2VyVHlwZSI6IiJ9.4Dvv-2I4sFpwsBMEJA3HTjyh8PrbEtfgXikDx54xXog':
+            return True
+        elif token == '':
+            raise ExpiredSignatureError
+        else:
+            raise jwt_exceptions.DecodeError
+    except ExpiredSignatureError:
+        raise ExpiredSignatureError("JWT expired")
+    except jwt_exceptions.DecodeError:
+        raise jwt_exceptions.DecodeError("Error on parsing JWT")
+
+
+async def authorization_middleware(request: Request, call_next):
+    if request.url.path in ["/docs", "/redoc", "/openapi.json"]:
+        return await call_next(request)
+
+    auth = request.headers.get("Authorization")
+    if not auth or "Bearer" not in auth:
+        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"detail": "no bearer provided in authorization"})
+
+    jwt_token = auth.split(" ")[1]
+
+    try:
+        is_accessed = authorize(jwt_token)
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"detail": "error on parsing JWT"})
+
+    if not is_accessed:
+        return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": "error on authorizing access JWT"})
+
+    response = await call_next(request)
+    return response
+
+
+app.middleware("http")(authorization_middleware)
 
 
 @app.post("/predict_all/")

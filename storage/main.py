@@ -15,6 +15,9 @@ import openpyxl
 import os
 import ast
 
+from jwt import ExpiredSignatureError, exceptions as jwt_exceptions
+
+
 app = FastAPI()
 
 app.add_middleware(
@@ -271,6 +274,20 @@ def get_db():
         raise HTTPException(status_code=500, detail="error while connecting to db" + str(e))
 
 
+def authorize(token: str) -> bool:
+    try:
+        if token == 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjIxNDM4NzcsIklEIjoxLCJVc2VyVHlwZSI6IiJ9.4Dvv-2I4sFpwsBMEJA3HTjyh8PrbEtfgXikDx54xXog':
+            return True
+        elif token == '':
+            raise ExpiredSignatureError
+        else:
+            raise jwt_exceptions.DecodeError
+    except ExpiredSignatureError:
+        raise ExpiredSignatureError("JWT expired")
+    except jwt_exceptions.DecodeError:
+        raise jwt_exceptions.DecodeError("Error on parsing JWT")
+
+
 def load_csv_to_db(file_path: str, table_name: str):
     conn = None
     try:
@@ -308,8 +325,10 @@ def get_center(address):
         return [0, 0]
 
 
-@app.post("/upload_file/11")
-async def upload_file_11(file: UploadFile = File(...)):
+@app.post("/upload_file/11/{token}")
+async def upload_file_11(token: str, file: UploadFile = File(...)):
+    authorize(token)
+
     if file.content_type != 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
         return {"error": "Invalid file type. Please upload an XLSX file."}
 
@@ -374,8 +393,10 @@ async def upload_file_11(file: UploadFile = File(...)):
     return {"filename": file.filename}
 
 
-@app.post("/upload_file/5/{sheet_name}")
-async def upload_file_5(sheet_name: str, file: UploadFile = File(...)):
+@app.post("/upload_file/5/{sheet_name}/{token}")
+async def upload_file_5(sheet_name: str, token: str, file: UploadFile = File(...)):
+    authorize(token)
+
     if file.content_type != 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
         return {"error": "Invalid file type. Please upload an XLSX file."}
 
@@ -435,8 +456,10 @@ async def upload_file_5(sheet_name: str, file: UploadFile = File(...)):
     return {"filename": file.filename}
 
 
-@app.post("/upload_file/7/}")
-async def upload_file_7(file: UploadFile = File(...)):
+@app.post("/upload_file/7/{token}")
+async def upload_file_7(token: str, file: UploadFile = File(...)):
+    authorize(token)
+
     if file.content_type != 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
         return {"error": "Invalid file type. Please upload an XLSX file."}
 
@@ -500,8 +523,9 @@ async def upload_file_7(file: UploadFile = File(...)):
     return {"filename": file.filename}
 
 
-@app.post("/upload_file/aggregated")
+@app.post("/upload_file/aggregated/{token}")
 async def upload_file_aggregated(
+        token: str,
         table_8: UploadFile = File(...),
         table_9: UploadFile = File(...),
         table_13: UploadFile = File(...),
@@ -509,6 +533,8 @@ async def upload_file_aggregated(
         table_11: UploadFile = File(...),
         table_12: UploadFile = File(...)
 ):
+    authorize(token)
+
     files = {"table_8": table_8, "table_9": table_9, "table_13": table_13,
              "table_14": table_14, "table_11": table_11, "table_12": table_12}
     for file_name in files.keys():
@@ -721,6 +747,7 @@ async def upload_file_aggregated(
 
 @app.post("/upload_file/aggregated")
 async def upload_file_aggregated(
+        token: str,
         table_8: UploadFile = File(...),
         table_9: UploadFile = File(...),
         table_13: UploadFile = File(...),
@@ -728,6 +755,8 @@ async def upload_file_aggregated(
         table_11: UploadFile = File(...),
         table_12: UploadFile = File(...)
 ):
+    authorize(token)
+
     files = {"table_8": table_8, "table_9": table_9, "table_13": table_13,
              "table_14": table_14, "table_11": table_11, "table_12": table_12}
     for file_name in files.keys():
@@ -938,8 +967,9 @@ async def upload_file_aggregated(
     return {"filename": file_name}
 
 
-@app.post("/upload_file/tecs")
-async def upload_file_aggregated():
+@app.post("/upload_file/tecs/{token}")
+async def upload_file_aggregated(token: str):
+    authorize(token)
     file_path = "tecs_table.csv"
     load_csv_to_db(file_path, 'tecs')
 
