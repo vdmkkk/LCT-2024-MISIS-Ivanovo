@@ -1407,35 +1407,36 @@ class CatBoostModel:
 
         return df_sorted
 
-def get_current_temperature():
+def get_current_inside_temperature():
     """
     Функция для получения прогноза погоды от Яндекс.Погоды по координатам.
     :param lat: Широта
     :param lon: Долгота
     :return: Прогноз погоды
     """
-    url = f'https://api.weather.yandex.ru/v2/forecast?lat=55.787715&lon=37.775631'
-    headers = {'X-Yandex-Weather-Key': "0281e1b2-1d86-4735-a2b6-6a77b605fb86"}
+    # url = f'https://api.weather.yandex.ru/v2/forecast?lat=55.787715&lon=37.775631'
+    # headers = {'X-Yandex-Weather-Key': "0281e1b2-1d86-4735-a2b6-6a77b605fb86"}
 
-    response = requests.get(url, headers=headers)
+    # response = requests.get(url, headers=headers)
 
-    if response.status_code == 200:
-        return response.json()["fact"]["temp"]
-    else:
-        print(f"Ошибка при запросе: {response.status_code}")
-        return None
+    # if response.status_code == 200:
+    #     return response.json()["fact"]["temp"]
+    # else:
+    #     print(f"Ошибка при запросе: {response.status_code}")
+    #     return None
+    return 22
 
 
-def get_future_temperature():
+def get_weather_forecast():
     """
     Функция для получения прогноза погоды от Яндекс.Погоды по координатам.
     :param lat: Широта
     :param lon: Долгота
     :return: Прогноз погоды
     """
-    
+
     # Получаем текущую дату и время
-    # now = int(get_current_temperature())
+    # now = int(get_current_inside_temperature())
 
     # url = f'https://api.weather.yandex.ru/v2/forecast?lat=55.787715&lon=37.775631'
     # headers = {'X-Yandex-Weather-Key': "0281e1b2-1d86-4735-a2b6-6a77b605fb86"}
@@ -1455,7 +1456,15 @@ def get_future_temperature():
     #     print(f"Ошибка при запросе: {response.status_code}")
     #     return None
     weather = pd.read_csv("weather_forecast.csv")
-    print(weather)
+    weather_forecast = weather['temperature'].head(6).tolist()
+    return {
+            't_in_5_hours': weather_forecast[0],
+            't_in_10_hours': weather_forecast[1],
+            't_in_15_hours': weather_forecast[2],
+            't_in_20_hours': weather_forecast[3],
+            't_in_25_hours': weather_forecast[4],
+            't_in_30_hours': weather_forecast[5]
+        }
 
 
 def connect_to_db():
@@ -1508,8 +1517,8 @@ async def calc_cooldown(unoms: List[int]):
             if database is None:
                 raise HTTPException(status_code=500, detail="Ошибка при считывании данных из базы данных")
 
-            t_inside = [get_current_temperature()] * len(unoms)
-            t_outside = get_future_temperature()
+            t_inside = [get_current_inside_temperature()] * len(unoms)
+            t_outside = get_weather_forecast()
 
             # Получаем предсказания
             catboost_model = CatBoostModel(database, type_description_dict, material_parameters_dict, model_path='catboost_for_house_cooling.cbm')
@@ -1534,6 +1543,5 @@ with open(material_parameters_file_path, 'r', encoding='utf-8') as file:
     material_parameters_dict = json.load(file)
 
 
-# if __name__ == "__main__":
-#     uvicorn.run(app, host="0.0.0.0", port=8000)
-get_future_temperature()
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
