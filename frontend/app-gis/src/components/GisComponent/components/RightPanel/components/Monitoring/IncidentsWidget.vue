@@ -79,6 +79,7 @@ const formatDate = (date: string | null): string => {
       v-for="{
         coordinates: coordinates,
         ctp_id: ctp_id,
+        ctp_center: ctp_center,
         handled_unoms: handled_unoms,
         id: id,
         payload: payload,
@@ -168,6 +169,7 @@ const formatDate = (date: string | null): string => {
         :data="{
           coordinates: coordinates,
           ctp_id: ctp_id,
+          ctp_center: ctp_center,
           handled_unoms: handled_unoms,
           id: id,
           payload: payload,

@@ -47,6 +47,7 @@ const handleOpenDialog = () => {
         :data="{
           coordinates: props.object?.coordinates,
           ctp_id: props.object?.ctp_id,
+          ctp_center: props.object?.ctp_center,
           handled_unoms: props.object?.handled_unoms,
           id: props.object?.id,
           payload: props.object?.payload,
