@@ -16,7 +16,6 @@ import os
 import ast
 
 # TODO: сделать чтобы писало какой не хватает колонки
-# TODO: сделать считывание cred'ov из env
 
 app = FastAPI()
 
@@ -28,10 +27,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DB_USER = 'ivanovo'
-DB_PASSWORD = 'ivanovo'
-DB_HOST = 'localhost'
-DB_NAME = 'ivanovo'
+DB_NAME = os.getenv('DB_NAME')
+DB_USER = os.getenv('DB_USER')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
+DB_PORT = os.getenv('DB_PORT')
+DB_HOST = os.getenv('DB_HOST')
 API_KEY = 'd347483b-506b-451a-8071-87074574be00'
 
 
@@ -722,4 +722,4 @@ async def upload_file_aggregated(
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8001)
