@@ -461,6 +461,8 @@ async def upload_file_5(sheet_name: str, token: str, file: UploadFile = File(...
 async def upload_file_7(token: str, file: UploadFile = File(...)):
     authorize(token)
 
+    print(API_KEY)
+
     if file.content_type != 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
         return {"error": "Invalid file type. Please upload an XLSX file."}
 
