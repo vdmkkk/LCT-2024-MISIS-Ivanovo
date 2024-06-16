@@ -97,7 +97,7 @@ const formatDate = (date: string | null): string => {
               font-weight: 500;
             "
           >
-            Статус: {{ payload.date_end ? 'Неакивна' : 'Активна' }}
+            Статус: {{ payload.date_end ? 'Неактивна' : 'Активна' }}
           </h3>
         </div>
 

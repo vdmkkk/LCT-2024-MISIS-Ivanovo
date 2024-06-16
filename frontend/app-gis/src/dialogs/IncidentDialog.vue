@@ -195,7 +195,7 @@ const handleSave = async () => {
       >
         <div :style="getStatus(incidentClosed)" />
         <h3 style="margin: 0; margin-left: 20px">
-          Статус: {{ incidentClosed ? 'Неакивна' : 'Активна' }}
+          Статус: {{ incidentClosed ? 'Неактивна' : 'Активна' }}
         </h3>
       </div>
 
