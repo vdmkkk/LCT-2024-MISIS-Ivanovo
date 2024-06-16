@@ -66,6 +66,19 @@ Quasar имеет частичную поддержку микросервисн
 # Запуск микросервиса
 
 Установить глобально quasar: https://quasar.dev/start/quasar-cli
-В quasar.config есть параметр devServer – для использования локального доменного имени. Либо закомментировать devServer, либо вписать 127.0.0.1 service-desk.misis-ivanovo.loc (C:\Windows\System32\drivers\etc\hosts.txt на Windows, /etc/hosts на Linux)
-Установить зависимости: «npm i» (node >= 18 в идеале)
-Команда для запуска: «quasar dev»
+
+В quasar.config есть параметр devServer – для использования локального доменного имени. Либо закомментировать devServer, либо вписать ```127.0.0.1 service-desk.misis-ivanovo.loc``` (C:\Windows\System32\drivers\etc\hosts.txt на Windows, /etc/hosts на Linux)
+
+Создайте файл .env со следующими зависимостями:
+
+```
+VUE_APP_GOOGLE_API=AIzaSyDS-GSws4Pok6Oo2J-GbkNsklKDyJpE_-M
+VUE_APP_BACKEND_GIS=http://92.51.39.188:8080
+VUE_APP_BACKEND_STORAGE=http://92.51.39.188:8001
+VUE_APP_ML_SERVICE=http://92.51.39.188:8000
+VUE_APP_START_DATE=2024-04-01T00:00:00
+```
+
+Установить зависимости: ```npm i``` (node >= 18 в идеале)
+Команда для запуска: ```quasar dev```
+
