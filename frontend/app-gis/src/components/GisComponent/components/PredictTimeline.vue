@@ -7,11 +7,11 @@ import { useOptionsStore } from 'src/stores/optionsStore';
 
 const optionsStore = useOptionsStore();
 const props = defineProps<{
-  modelValue: string;
+  modelValue: string | undefined;
 }>();
 
 // Define the starting point and the range
-const startDate = new Date('2024-04-01T00:00:00');
+const startDate = new Date(process.env.VUE_APP_START_DATE);
 const daysRange = 14;
 
 // Generate date positions

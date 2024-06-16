@@ -2,7 +2,7 @@ import { ml } from 'src/boot/axios';
 
 const getDynamicDataForUnom = async (unom: number) => {
   // const today = new Date().toISOString().split('.')[0];
-  const today = '2024-04-01T00:00:00';
+  const today = process.env.VUE_APP_START_DATE;
   const earlier = '2024-03-18T00:00:00';
   return await ml
     .post(

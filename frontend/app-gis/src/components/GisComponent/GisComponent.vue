@@ -7,6 +7,7 @@ import LeftPanel from './components/LeftPanel/LeftPanel.vue';
 import getAllIncidents from 'src/api/getAllIncidents';
 
 import { useOptionsStore } from 'src/stores/optionsStore';
+import getStats from 'src/api/getStats';
 
 import { useQuasar } from 'quasar';
 import getGeoByFilters from 'src/api/getGeoByFilters';
@@ -25,6 +26,21 @@ import CreateIncident from './components/CreateIncident.vue';
 import IncidentMode from './components/IncidentMode.vue';
 import getIncidentsById from 'src/api/getIncidentsById';
 
+// when building SPA my png's stop working D;. This is a crazy workaround, may the god forgive me
+const imageTable = {
+  building_incident:
+    'https://psv4.userapi.com/c235131/u346561169/docs/d36/63e77c9d3f28/building_incident.png?extra=bCT1vXsS0jqkbSu_7byLbKSdVmamlaYmMl3PkY02yjm98sApiGZf0fQksMkBYAmFOPmM2sl2NS5O4K44BN9qPMH0EWhKZ0yQ04UpmIzXjR2VOFQ0gHGKs4xx5u8c8gVn2S6g2jlXn5V92jwTXs5kFtCVoA',
+  building_incident_active:
+    'https://psv4.userapi.com/c235131/u346561169/docs/d43/dc4eb347de8a/building_incident_active.png?extra=PDPZmmmtHNDajV0zWEj0xnOE_jc8kTcuaCnsdJHZ8lRFrM3-ewPEIRIA-v_vzQdH5cNSiUS_u7JtkijnPaW1DomiQ91Oh1G7JcibGmB-vm2uWUTtaOfDVqaGCsdy5SwuJdoEzZBTzpaHiYxBYNJtIonoHw',
+  ctp: 'https://psv4.userapi.com/c235131/u346561169/docs/d9/bcd6f4760b61/ctp.png?extra=7TPWruHnksx3cRtQH3ZpVjpXczL0ldrAoVTQtzrFmhgRsRmGyLc2hpGoX1kYctmCvRJtCQs8bD15sDfeTVoCFTUi7fK24N0AxSpPEg1A-QEtHNmdCeMrASttzWliSNIk7qFQ4IJ0pixc9CDqboMIKkjp1w',
+  ctp_active:
+    'https://psv4.userapi.com/c235131/u346561169/docs/d5/580d666c1aad/ctp_active.png?extra=vLBE4E-Ty9Wbx_9m6a9gMSsnIPz-LLwwDOgr7SzPUVkmaaZfdmtNZFOu7UThnFsPwFG_90FUvuts2hI1uT79zfFkBlZrN3AEyqEC3cT2FRV6Jqc3MKK_L7WqYqGzKJoVUV2TWd7c9CRaSnpsz0stl68RsQ',
+  ctp_incident:
+    'https://psv4.userapi.com/c235131/u346561169/docs/d5/326ef2bd8f43/ctp_incident.png?extra=FxVHT7lLlgKvdsRELZfMIxMOem6e2JKjU_Uwes4TaYLpndwmfV6Hss4tJ_T7aq9omq9oTc50GZiWxD6bbdLcpCsFfiGXa5KDTCIYU0NmgmC1Ptluo6PYEIk1SdM72FS8RlHzMuvuiKwhPzkbaI08r-vaqQ',
+  ctp_incident_active:
+    'https://psv4.userapi.com/c235131/u346561169/docs/d6/bf44690ff414/ctp_incident_active.png?extra=ITPYkTlUmYDHhgVBdkiuE6gWfeS5I-tgN5Ir8gVTmjfPx_Srdx8cKTYfgYlYPrwvUMspwn2odwCLwijMY0atdAEDX-_j5awrr_pmgMVddL1HodMeRIXQW4ECtD8XPjOdqcVjQN-ebrwlRuhXPCl1KznSmA',
+};
+
 const $q = useQuasar();
 const colors = Highcharts.getOptions().colors;
 const showIncidentDialog = ref(false);
@@ -41,7 +57,7 @@ const areaPolygonsRef = ref<google.maps.Polygon[]>([]);
 const currPolygon = ref<number | null>();
 const currIncident = ref<number | null>();
 const currMarker = ref<string | number | null>();
-const currPredictDate = ref('2024-04-01T00:00:00');
+const currPredictDate = ref(process.env.VUE_APP_START_DATE);
 const predictMode = ref(0);
 const incidentMode = ref(0);
 const optionsStore = useOptionsStore();
@@ -114,10 +130,9 @@ const handleMarkers = (type: 'ctp' | 'tec', ctps: any) => {
         position: { lat: position[1], lng: position[0] },
         title: `ЦТП ${ctp_id}`,
         icon: {
-          url: `src/assets/markers/${type}${
-            currMarker.value == i ? '_active' : ''
-          }.png`,
-          scaledSize: new window.google.maps.Size(40, 40),
+          // @ts-ignore //
+          url: imageTable[`${type}${currMarker.value == i ? '_active' : ''}`],
+          scaledSize: new window.google.maps.Size(26, 26),
         },
       });
 
@@ -190,13 +205,18 @@ const updateMarkers = () => {
       toRaw(obj)
         .get(toRaw(obj).keys().next().value)
         ?.set('icon', {
-          url: `src/assets/markers/${getType(
-            // @ts-ignore //
-            toRaw(obj).get(toRaw(obj).keys().next().value).getIcon().url
-          )}${mode}${
-            currMarker.value == toRaw(obj).keys().next().value ? '_active' : ''
-          }.png`,
-          scaledSize: new window.google.maps.Size(40, 40),
+          // @ts-ignore //
+          url: imageTable[
+            `${getType(
+              // @ts-ignore //
+              toRaw(obj).get(toRaw(obj).keys().next().value).getIcon().url
+            )}${mode}${
+              currMarker.value == toRaw(obj).keys().next().value
+                ? '_active'
+                : ''
+            }`
+          ],
+          scaledSize: new window.google.maps.Size(26, 26),
         });
     });
   }
@@ -256,6 +276,15 @@ const handleBuildingRender = (buidlings: GeoType3, predictDate: string) => {
 
 onMounted(() => {
   loadData();
+  getStats()
+    .then((res) => {
+      distributionData.value = res['event_counts'];
+      tasksData.value = {
+        // @ts-ignore //
+        'Без событий': res['n_unoms_without_events'],
+      };
+    })
+    .then();
 });
 
 const getDataMonitoring = async (predictDate = '') => {
@@ -346,16 +375,26 @@ const handleMarkersIncident = (incidents: any) => {
 
   const newMarkers = [];
   for (let i = 0; i < incidents.length; i++) {
-    const { ctp_id, coordinates: position, id, handled_unoms } = incidents[i];
-    if (position) {
+    const {
+      ctp_id,
+      coordinates: position,
+      id,
+      handled_unoms,
+      payload,
+    } = incidents[i];
+
+    if (position && payload['date_end'] === '') {
       const marker = new google.maps.Marker({
         position: { lat: position[1], lng: position[0] },
         title: `Инцидент #${id}`,
         icon: {
-          url: `src/assets/markers/${
-            ctp_id === '' ? 'building' : 'ctp'
-          }_incident${currMarker.value == i ? '_active' : ''}.png`,
-          scaledSize: new window.google.maps.Size(40, 40),
+          // @ts-ignore //
+          url: imageTable[
+            `${ctp_id === '' ? 'building' : 'ctp'}_incident${
+              currMarker.value == i ? '_active' : ''
+            }`
+          ],
+          scaledSize: new window.google.maps.Size(26, 26),
         },
       });
 
@@ -482,6 +521,12 @@ watch(incidentMode, () => {
     });
   }
 });
+
+
+const distributionData = ref<Map<string, number[]>>();
+const tasksData = ref<Map<string, number[]>>();
+
+
 </script>
 
 <template>
@@ -490,7 +535,7 @@ watch(incidentMode, () => {
     :incident-id="currIncident!"
     v-model="showIncidentDialog"
   />
-  <InfoPanel />
+  <InfoPanel :data="tasksData!" />
   <PredictMode v-model="predictMode" />
   <IncidentMode :shown="currIncident" v-model="incidentMode" />
   <PredictTimeline v-model="currPredictDate" />

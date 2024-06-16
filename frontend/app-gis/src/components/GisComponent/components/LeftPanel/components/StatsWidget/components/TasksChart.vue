@@ -2,7 +2,7 @@
 import Highcharts from 'highcharts/highcharts.src';
 import HighchartsMore from 'highcharts/highcharts-more.src';
 import ModulesAccessibility from 'highcharts/modules/accessibility.src';
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 
 HighchartsMore(Highcharts);
 ModulesAccessibility(Highcharts);
@@ -11,7 +11,26 @@ const props = defineProps<{
   data: Map<string, number[]>;
 }>();
 
+interface TaskData {
+  name: string;
+  y: number;
+}
+
+const taskData = ref<TaskData[]>([]);
+
+
 onMounted(() => {
+  const taskKeys = ['Текущие события', 'Собранные события'];
+
+  taskData.value = Object.entries(props.data)
+    .filter(([key]) => taskKeys.includes(key))
+    .map(([key, value]) => {
+      return {
+        name: key,
+        y: value, // Используем первое значение из массива
+      };
+    });
+
   // @ts-ignore //
   Highcharts.chart('tasks-container', {
     chart: {
@@ -42,12 +61,7 @@ onMounted(() => {
             return `<span style="color:${this.color}">\u25CF</span> ${this.name}: ${this.y} объектов<br/>`;
           },
         },
-        data: Object.entries(props.data).map(([key, value]) => {
-          return {
-            name: key,
-            y: value,
-          };
-        }),
+        data: taskData.value,
       },
     ],
   });
