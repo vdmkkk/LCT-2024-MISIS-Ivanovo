@@ -1509,7 +1509,7 @@ async def calc_cooldown(unoms: List[int]):
             t_outside = get_future_temperature()
 
             # Получаем предсказания
-            catboost_model = CatBoostModel(database, type_description_dict, material_parameters_dict, model_path='catboost.cbm')
+            catboost_model = CatBoostModel(database, type_description_dict, material_parameters_dict, model_path='catboost_for_house_cooling.cbm')
             data_for_catboost = catboost_model.prepare_data_for_catboost(unoms, t_inside, t_outside)
             catboost_predictions = catboost_model.get_catboost_predictions(data_for_catboost)
             df_sorted = catboost_model.get_final_ranking(catboost_predictions)
