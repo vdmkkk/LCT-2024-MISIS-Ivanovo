@@ -58,7 +58,7 @@ onMounted(() => {
   background-color: white;
   top: 100px;
   width: 25vw;
-  padding: 14px;
+  padding: 24px;
   z-index: 999;
   border-radius: 20px;
   padding-bottom: 20px;
@@ -66,13 +66,14 @@ onMounted(() => {
   flex-direction: column;
   transition: left 0.3s ease-in-out; /* Smooth transition */
   max-height: 600px;
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, .1);
 
   h5,
   h6 {
     margin: 0;
     margin-top: 10px;
     margin-bottom: 10px;
-    font-weight: 500;
+    font-weight: 400;
   }
 }
 

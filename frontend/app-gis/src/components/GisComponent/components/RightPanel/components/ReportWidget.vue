@@ -65,6 +65,7 @@ onMounted(() => {
     class="report-container"
   >
     <h1>Сводка</h1>
+    <h2>Последнее обновление: </h2>
     <div v-for="[key, data] in Object.entries(data)" :key="key">
       <div>
         <div style="display: flex; align-items: baseline">
