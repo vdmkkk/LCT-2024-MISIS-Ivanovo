@@ -22,6 +22,8 @@ from typing import List
 
 import os
 
+from starlette.middleware.base import BaseHTTPMiddleware
+
 DB_NAME = os.getenv('DB_NAME')
 DB_USER = os.getenv('DB_USER')
 DB_PASSWORD = os.getenv('DB_PASSWORD')
@@ -53,29 +55,50 @@ def authorize(token: str) -> bool:
         raise HTTPException(401, detail='wrong jwt')
 
 
-async def authorization_middleware(request: Request, call_next):
-    if request.url.path in ["/docs", "/redoc", "/openapi.json"]:
-        return await call_next(request)
+# async def authorization_middleware(request: Request, call_next):
+#     if request.url.path in ["/docs", "/redoc", "/openapi.json"]:
+#         return await call_next(request)
+#
+#     auth = request.headers.get("Authorization")
+#     if not auth or "Bearer" not in auth:
+#         return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"detail": "no bearer provided in authorization"})
+#
+#     jwt_token = auth.split(" ")[1]
+#
+#     try:
+#         is_accessed = authorize(jwt_token)
+#     except Exception as e:
+#         return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"detail": "error on parsing JWT"})
+#
+#     if not is_accessed:
+#         return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": "error on authorizing access JWT"})
+#
+#     response = await call_next(request)
+#     return response
 
-    auth = request.headers.get("Authorization")
-    if not auth or "Bearer" not in auth:
-        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"detail": "no bearer provided in authorization"})
 
-    jwt_token = auth.split(" ")[1]
+class AuthorizationMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        auth = request.headers.get("Authorization")
+        if not auth or "Bearer" not in auth:
+            return JSONResponse(status_code=401, content={"detail": "no bearer provided in authorization"})
 
-    try:
-        is_accessed = authorize(jwt_token)
-    except Exception as e:
-        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"detail": "error on parsing JWT"})
+        jwt_token = auth.split(" ")[1]
 
-    if not is_accessed:
-        return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": "error on authorizing access JWT"})
+        try:
+            is_accessed = authorize(jwt_token)
+        except Exception as e:
+            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"detail": "error on parsing JWT"})
 
-    response = await call_next(request)
-    return response
+        if not is_accessed:
+            return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": "error on authorizing access JWT"})
+
+        response = await call_next(request)
+        return response
 
 
-app.middleware("http")(authorization_middleware)
+# Add the authorization middleware first
+app.add_middleware(AuthorizationMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
