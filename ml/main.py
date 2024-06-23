@@ -205,7 +205,6 @@ async def predict_one(unom: int, date: datetime.datetime, n: int, date_start: da
             port="5432",  # стандартный порт PostgreSQL
             database=DB_NAME
         )
-
         # Получаем предсказания
         preds = get_predict_for_one(model, unom, date, n, date_start, date_end, conn)
 
@@ -535,9 +534,10 @@ def get_predict_for_one(model: CatBoostClassifier, unom: int, date: datetime.dat
     }, inplace=True)
     odpu_stat[['volume1', 'volume2', 'q2']] = odpu_stat[['volume1', 'volume2', 'q2']].fillna(
         odpu_stat[['volume1', 'volume2', 'q2']].mean())
-
+    odpu_stat = odpu_stat.fillna(0)
     ans['odpu_plot'] = odpu_stat.set_index('Месяц/Год').to_dict()
 
+    print(ans)
     return ans
 
 
