@@ -28,17 +28,13 @@ import getIncidentsById from 'src/api/getIncidentsById';
 
 // when building SPA my png's stop working D;. This is a crazy workaround, may the god forgive me
 const imageTable = {
-  building_incident:
-    'https://psv4.userapi.com/c235131/u346561169/docs/d36/63e77c9d3f28/building_incident.png?extra=bCT1vXsS0jqkbSu_7byLbKSdVmamlaYmMl3PkY02yjm98sApiGZf0fQksMkBYAmFOPmM2sl2NS5O4K44BN9qPMH0EWhKZ0yQ04UpmIzXjR2VOFQ0gHGKs4xx5u8c8gVn2S6g2jlXn5V92jwTXs5kFtCVoA',
+  building_incident: 'https://i.postimg.cc/x8jjySwg/building-incident.png',
   building_incident_active:
-    'https://psv4.userapi.com/c235131/u346561169/docs/d43/dc4eb347de8a/building_incident_active.png?extra=PDPZmmmtHNDajV0zWEj0xnOE_jc8kTcuaCnsdJHZ8lRFrM3-ewPEIRIA-v_vzQdH5cNSiUS_u7JtkijnPaW1DomiQ91Oh1G7JcibGmB-vm2uWUTtaOfDVqaGCsdy5SwuJdoEzZBTzpaHiYxBYNJtIonoHw',
-  ctp: 'https://psv4.userapi.com/c235131/u346561169/docs/d9/bcd6f4760b61/ctp.png?extra=7TPWruHnksx3cRtQH3ZpVjpXczL0ldrAoVTQtzrFmhgRsRmGyLc2hpGoX1kYctmCvRJtCQs8bD15sDfeTVoCFTUi7fK24N0AxSpPEg1A-QEtHNmdCeMrASttzWliSNIk7qFQ4IJ0pixc9CDqboMIKkjp1w',
-  ctp_active:
-    'https://psv4.userapi.com/c235131/u346561169/docs/d5/580d666c1aad/ctp_active.png?extra=vLBE4E-Ty9Wbx_9m6a9gMSsnIPz-LLwwDOgr7SzPUVkmaaZfdmtNZFOu7UThnFsPwFG_90FUvuts2hI1uT79zfFkBlZrN3AEyqEC3cT2FRV6Jqc3MKK_L7WqYqGzKJoVUV2TWd7c9CRaSnpsz0stl68RsQ',
-  ctp_incident:
-    'https://psv4.userapi.com/c235131/u346561169/docs/d5/326ef2bd8f43/ctp_incident.png?extra=FxVHT7lLlgKvdsRELZfMIxMOem6e2JKjU_Uwes4TaYLpndwmfV6Hss4tJ_T7aq9omq9oTc50GZiWxD6bbdLcpCsFfiGXa5KDTCIYU0NmgmC1Ptluo6PYEIk1SdM72FS8RlHzMuvuiKwhPzkbaI08r-vaqQ',
-  ctp_incident_active:
-    'https://psv4.userapi.com/c235131/u346561169/docs/d6/bf44690ff414/ctp_incident_active.png?extra=ITPYkTlUmYDHhgVBdkiuE6gWfeS5I-tgN5Ir8gVTmjfPx_Srdx8cKTYfgYlYPrwvUMspwn2odwCLwijMY0atdAEDX-_j5awrr_pmgMVddL1HodMeRIXQW4ECtD8XPjOdqcVjQN-ebrwlRuhXPCl1KznSmA',
+    'https://i.postimg.cc/Vv7fKV1w/building-incident-active.png',
+  ctp: 'https://i.postimg.cc/WpS1phZy/ctp.png',
+  ctp_active: 'https://i.postimg.cc/GmTLjKf0/ctp-active.png',
+  ctp_incident: 'https://i.postimg.cc/rp68ZW6D/ctp-incident.png',
+  ctp_incident_active: 'https://i.postimg.cc/rmMqMkwc/ctp-incident-active.png',
 };
 
 const $q = useQuasar();
@@ -522,11 +518,8 @@ watch(incidentMode, () => {
   }
 });
 
-
 const distributionData = ref<Map<string, number[]>>();
 const tasksData = ref<Map<string, number[]>>();
-
-
 </script>
 
 <template>
