@@ -39,8 +39,8 @@ watch(n, loadData);
 
 <style scoped lang="scss">
 .predict-container {
-  max-height: 80vh;
-  overflow-y: auto;
+  max-height: 70vh;
+  overflow-y: scroll;
   h1 {
     font-size: 1.9em;
     font-weight: 500;

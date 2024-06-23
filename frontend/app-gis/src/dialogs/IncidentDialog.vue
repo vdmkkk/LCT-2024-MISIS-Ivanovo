@@ -23,11 +23,14 @@ const emit = defineEmits(['update:modelValue']);
 
 const setOpen = () => {
   showDialog.value = props.modelValue;
+
   incident.value = props.incidentId;
   if (incident.value) {
     getIncidentsById(incident.value)
       .then((res) => (incidentData.value = res))
       .catch();
+  } else {
+    incidentData.value = props.data;
   }
   description.value = incidentData.value?.payload?.['description'];
   date_start.value = formatISODate(incidentData.value?.payload?.['date_start']);

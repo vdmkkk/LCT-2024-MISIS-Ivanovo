@@ -42,9 +42,12 @@ const updateDate = (value: number) => {
 };
 
 const emitData = () => {
+  const newDay = rawDate.value;
+
   emits(
     'update:modelValue',
-    rawDate.value.toISOString().split('T')[0] + 'T00:00:00'
+    new Date(newDay.setDate(newDay.getDate() + 1)).toISOString().split('T')[0] +
+      'T00:00:00'
   );
 };
 

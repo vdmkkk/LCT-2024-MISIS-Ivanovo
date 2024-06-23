@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue';
 
 import getIncidentsByUnom from 'src/api/getIncidentsForUnom';
 import IncidentDialog from 'src/dialogs/IncidentDialog.vue';
+import IncidentType from 'src/types/IncidentType';
 
 const props = defineProps<{
   object: Map<string, any>;
@@ -50,9 +51,18 @@ const getStatus = (date_end: string | null) => {
 };
 
 const showDialog = ref(false);
+const dialogData = ref<IncidentType>({
+  coordinates: [0, 0],
+  ctp_id: null,
+  ctp_center: null,
+  handled_unoms: null,
+  id: 0,
+  payload: [],
+});
 
-const handleOpenDialog = () => {
-  console.log('bruh');
+const handleOpenDialog = (newDialogData: any) => {
+  console.log(newDialogData);
+  dialogData.value = newDialogData;
   showDialog.value = true;
 };
 
@@ -84,7 +94,16 @@ const formatDate = (date: string | null): string => {
         payload: payload,
       } in data"
       :key="id"
-      @click="handleOpenDialog"
+      @click="
+        handleOpenDialog({
+          coordinates: coordinates,
+          ctp_id: ctp_id,
+          ctp_center: ctp_center,
+          handled_unoms: handled_unoms,
+          id: id,
+          payload: payload,
+        })
+      "
     >
       <div>
         <div style="display: flex; align-items: center">
@@ -174,24 +193,14 @@ const formatDate = (date: string | null): string => {
         <p>Часов до остывания трубы: {{ Math.ceil(hours_to_cool / 1.5) }}</p>
         <p>Приоритет: {{ priority_group }}</p>
       </div>
-      <IncidentDialog
-        v-model="showDialog"
-        :data="{
-          coordinates: coordinates,
-          ctp_id: ctp_id,
-          ctp_center: ctp_center,
-          handled_unoms: handled_unoms,
-          id: id,
-          payload: payload,
-        }"
-      />
+      <IncidentDialog v-model="showDialog" :data="dialogData" />
     </div>
   </div>
 </template>
 
 <style scoped lang="scss">
 .incidents-container {
-  max-height: 80vh;
+  max-height: 70vh;
   overflow-y: scroll;
   border-radius: 20px;
 
