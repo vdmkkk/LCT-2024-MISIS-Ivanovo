@@ -17,7 +17,6 @@ import warnings
 
 from jwt import ExpiredSignatureError, decode as jwt_decode, exceptions as jwt_exceptions
 
-
 from typing import List
 
 import os
@@ -90,7 +89,8 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
             return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"detail": "error on parsing JWT"})
 
         if not is_accessed:
-            return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": "error on authorizing access JWT"})
+            return JSONResponse(status_code=status.HTTP_403_FORBIDDEN,
+                                content={"detail": "error on authorizing access JWT"})
 
         response = await call_next(request)
         return response
@@ -638,7 +638,7 @@ def get_stats_from_bd(date, conn):
     ans['weather2'] = weather2
 
     n_unique_unoms = \
-    pd.read_sql("SELECT COUNT(DISTINCT unom) AS unique_unom_count FROM buildings;", conn).unique_unom_count[0]
+        pd.read_sql("SELECT COUNT(DISTINCT unom) AS unique_unom_count FROM buildings;", conn).unique_unom_count[0]
     n_unique_unoms_with_event = events['УНОМ'].nunique()
     ans['n_unoms_without_events'] = int(n_unique_unoms) - int(n_unique_unoms_with_event)
 
@@ -851,9 +851,9 @@ def get_odpu_one(unom: int, date: datetime.datetime, conn):
     odpu['volume2forhour'] = odpu['Объём обратного теплоносителя из системы ЦО'] / (odpu['Наработка часов счётчика'])
     odpu['q2forhour'] = odpu['Расход тепловой энергии'].astype(float) / (odpu['Наработка часов счётчика'])
     odpu['difference_supply_return_mix_all'] = odpu['Разница между подачей и обраткой(Подмес)'].astype(float) / (
-    odpu['Наработка часов счётчика']) * 24
+        odpu['Наработка часов счётчика']) * 24
     odpu['difference_supply_return_leak_all'] = odpu['Разница между подачей и обраткой(Утечка)'].astype(float) / (
-    odpu['Наработка часов счётчика']) * 24
+        odpu['Наработка часов счётчика']) * 24
     odpu['temperature_supply_all'] = odpu['Температура подачи'].astype(float) / (odpu['Наработка часов счётчика']) * 24
     odpu['temperature_return_all'] = odpu['Температура обратки'].astype(float) / (odpu['Наработка часов счётчика']) * 24
 
@@ -1365,7 +1365,8 @@ def add_cyclic_features(df, col, max_val):
 
 
 class CatBoostModel:
-    def __init__(self, data, type_description_dict, material_parameters_dict, model_path='./configs/catboost_for_house_cooling.cbm'):
+    def __init__(self, data, type_description_dict, material_parameters_dict,
+                 model_path='./configs/catboost_for_house_cooling.cbm'):
         """
         Инициализация класса CatBoostModel.
 
@@ -1464,7 +1465,6 @@ class CatBoostModel:
             print(f"Ошибка при подключении к базе данных: {e}")
             return None
 
-
     def prepare_one_data_sample(self, unom, t_in, t_outside):
         """
         Подготаливает данные для одного образца для модели на основе входных параметров.
@@ -1528,7 +1528,8 @@ class CatBoostModel:
         Returns:
             dict: Словарь, {unom: hours_until_cooling}, где hours_until_cooling - часы до остывания дома.
         """
-        data_for_catboost['hours_until_cooling'] = self.model.predict(data_for_catboost).astype('int64')
+
+        data_for_catboost['hours_until_cooling'] = data_for_catboost.apply(lambda row: time_count(row), axis=1)
         return data_for_catboost.set_index('unom')['hours_until_cooling'].to_dict()
 
     def complex_custom_ranking(self, unom, hours):
@@ -1584,13 +1585,34 @@ class CatBoostModel:
                 for old_key, new_key in zip(data_dict.keys(), new_keys):
                     new_dict[new_key] = data_dict[old_key]
 
-                apartment_tags = ['многоквартирный дом', 'блокированный жилой дом', 'общежитие', 'спальный корпус', 'гараж', 'дом ребенка', 'интернат', 'гостиница']
-                social_tags = ['школа', 'библиотека', 'музей', 'детский сад', 'колледж', 'больница', 'родильный дом', 'поликлиника', 'ясли-сад', 'медучилище', 'дом детского творчества', 'музыкальная школа', 'школа-интернат', 'гимназия', 'лечебный корпус', 'санаторий', 'центр реабилитации', 'спецшкола', 'училище', 'лечебное', 'учебное', 'учебно-производственный комбинат', 'культурно-просветительное', 'техническое училище', 'техникум', 'школа-сад', 'детские ясли', 'станция скорой помощи', 'спортивная школа', 'наркологический диспансер', 'профтехучилище', 'спортивный клуб', 'лаборатория', 'детский санаторий', 'диспансер', 'дворец пионеров', 'детсад-ясли', 'детский дом культуры', 'ясли', 'физкультурно-оздоровительный комплекс', 'клуб', 'бассейн и спортзал', 'спортивный корпус', 'детское дошкольное учреждение', 'подстанция скорой помощи', 'блок-пристройка начальных классов', 'спортивное', 'кафе', 'столовая', 'центр обслуживания']
-                industrial_tags = ['трансформаторная подстанция', 'нежилое', 'выставочный павильон', 'кухня клиническая', 'хозблок', 'овощехранилище', 'учреждение', 'хирургический корпус', 'морг', 'пищеблок', 'учебно-воспитателный комбинат', 'учреждение,мастерские', 'дезинфекционная камера', 'отделение судебно-медицинской экспертизы', 'пункт охраны', 'учебный корпус', 'плавательный бассейн', 'хранилище', 'административное', 'научное', 'архив', 'учебно-воспитательное', 'терапевтический корпус', 'учебное', 'административно-бытовой']
+                apartment_tags = ['многоквартирный дом', 'блокированный жилой дом', 'общежитие', 'спальный корпус',
+                                  'гараж', 'дом ребенка', 'интернат', 'гостиница']
+                social_tags = ['школа', 'библиотека', 'музей', 'детский сад', 'колледж', 'больница', 'родильный дом',
+                               'поликлиника', 'ясли-сад', 'медучилище', 'дом детского творчества', 'музыкальная школа',
+                               'школа-интернат', 'гимназия', 'лечебный корпус', 'санаторий', 'центр реабилитации',
+                               'спецшкола', 'училище', 'лечебное', 'учебное', 'учебно-производственный комбинат',
+                               'культурно-просветительное', 'техническое училище', 'техникум', 'школа-сад',
+                               'детские ясли', 'станция скорой помощи', 'спортивная школа', 'наркологический диспансер',
+                               'профтехучилище', 'спортивный клуб', 'лаборатория', 'детский санаторий', 'диспансер',
+                               'дворец пионеров', 'детсад-ясли', 'детский дом культуры', 'ясли',
+                               'физкультурно-оздоровительный комплекс', 'клуб', 'бассейн и спортзал',
+                               'спортивный корпус', 'детское дошкольное учреждение', 'подстанция скорой помощи',
+                               'блок-пристройка начальных классов', 'спортивное', 'кафе', 'столовая',
+                               'центр обслуживания']
+                industrial_tags = ['трансформаторная подстанция', 'нежилое', 'выставочный павильон',
+                                   'кухня клиническая', 'хозблок', 'овощехранилище', 'учреждение',
+                                   'хирургический корпус', 'морг', 'пищеблок', 'учебно-воспитателный комбинат',
+                                   'учреждение,мастерские', 'дезинфекционная камера',
+                                   'отделение судебно-медицинской экспертизы', 'пункт охраны', 'учебный корпус',
+                                   'плавательный бассейн', 'хранилище', 'административное', 'научное', 'архив',
+                                   'учебно-воспитательное', 'терапевтический корпус', 'учебное',
+                                   'административно-бытовой']
 
                 energy_efficiency = new_dict['Класс энергоэффективности здания']
-                energy_efficiency_mapping = {'A++': 2, 'A+': 3, 'A': 4, 'B': 5, 'C': 6, 'D': 7, 'E': 8, 'F': 9, 'G': 10}  # Словарь для сопоставления уровня энергоэффективности с числовым значением
-                efficiency_weight = energy_efficiency_mapping.get(energy_efficiency, 1)  # По умолчанию, если энергоэффективность неизвестна или некорректна
+                energy_efficiency_mapping = {'A++': 2, 'A+': 3, 'A': 4, 'B': 5, 'C': 6, 'D': 7, 'E': 8, 'F': 9,
+                                             'G': 10}  # Словарь для сопоставления уровня энергоэффективности с числовым значением
+                efficiency_weight = energy_efficiency_mapping.get(energy_efficiency,
+                                                                  1)  # По умолчанию, если энергоэффективность неизвестна или некорректна
 
                 # Определение весов категорий
                 purpose_weight = new_dict.get(new_dict['Назначение'], "многоквартирный дом")
@@ -1603,8 +1625,10 @@ class CatBoostModel:
 
                 # Определение весов режима работы
                 working_time = new_dict['Режим работы']
-                working_time_mapping = {'Круглосуточно': 3, '9:00 - 21:00': 2, '9:00 – 18:00': 1}  # Словарь для сопоставления графика работы с числовым значением
-                working_weight = working_time_mapping.get(working_time, 1)  # По умолчанию, если график работы неизвестен или некорректен
+                working_time_mapping = {'Круглосуточно': 3, '9:00 - 21:00': 2,
+                                        '9:00 – 18:00': 1}  # Словарь для сопоставления графика работы с числовым значением
+                working_weight = working_time_mapping.get(working_time,
+                                                          1)  # По умолчанию, если график работы неизвестен или некорректен
 
                 if hours <= 2:
                     # приоритет максимальный (1)
@@ -1616,10 +1640,8 @@ class CatBoostModel:
                 return None
 
         except Exception as e:
-                print(f"Ошибка при подключении к базе данных: {e}")
-                return None
-
-
+            print(f"Ошибка при подключении к базе данных: {e}")
+            return None
 
     def get_final_ranking(self, data_from_request):
         """
@@ -1663,6 +1685,7 @@ class CatBoostModel:
         df_sorted = df.sort_values(by='Rank', ascending=True)
 
         return df_sorted
+
 
 def get_current_inside_temperature():
     """
@@ -1715,13 +1738,13 @@ def get_weather_forecast():
     weather = pd.read_csv("./configs/weather_forecast.csv")
     weather_forecast = weather['temperature'].head(6).tolist()
     return {
-            't_in_5_hours': weather_forecast[0],
-            't_in_10_hours': weather_forecast[1],
-            't_in_15_hours': weather_forecast[2],
-            't_in_20_hours': weather_forecast[3],
-            't_in_25_hours': weather_forecast[4],
-            't_in_30_hours': weather_forecast[5]
-        }
+        't_in_5_hours': weather_forecast[0],
+        't_in_10_hours': weather_forecast[1],
+        't_in_15_hours': weather_forecast[2],
+        't_in_20_hours': weather_forecast[3],
+        't_in_25_hours': weather_forecast[4],
+        't_in_30_hours': weather_forecast[5]
+    }
 
 
 def connect_to_db():
@@ -1748,46 +1771,71 @@ def read_data_from_db(conn):
         print(f"Ошибка при выполнении запроса: {e}")
         return None
 
+
 @app.post("/calc_cooldown/")
 async def calc_cooldown(unoms: List[int]):
-        """
-        Ручка для получение ранжированного списка остывающих объектов
+    """
+    Ручка для получение ранжированного списка остывающих объектов
 
-        Аргументы:
-            unoms (list): Массив УНОМов
+    Аргументы:
+        unoms (list): Массив УНОМов
 
-        Возвращает:
-            dict: словарь, содержащий отсортированные данные по приоритету,
-                          включающий столбцы 'unom', 'hours' и 'Rank'.
-                          Значения в столбце 'Rank' нормализованы в диапазоне от 1 до 3,
-                          где 1 - максимальный приоритет.
-        """
-        unoms = [int(unom) for unom in unoms]
-        conn = connect_to_db()
-        if not conn:
-            raise HTTPException(status_code=500, detail="Не удалось подключиться к базе данных")
+    Возвращает:
+        dict: словарь, содержащий отсортированные данные по приоритету,
+                      включающий столбцы 'unom', 'hours' и 'Rank'.
+                      Значения в столбце 'Rank' нормализованы в диапазоне от 1 до 3,
+                      где 1 - максимальный приоритет.
+    """
+    unoms = [int(unom) for unom in unoms]
+    conn = connect_to_db()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Не удалось подключиться к базе данных")
 
-        try:
-            # Считываем данные в DataFrame
-            database = read_data_from_db(conn)
+    try:
+        # Считываем данные в DataFrame
+        database = read_data_from_db(conn)
 
-            if database is None:
-                raise HTTPException(status_code=500, detail="Ошибка при считывании данных из базы данных")
+        if database is None:
+            raise HTTPException(status_code=500, detail="Ошибка при считывании данных из базы данных")
 
-            t_inside = [get_current_inside_temperature()] * len(unoms)
-            t_outside = get_weather_forecast()
+        t_inside = [get_current_inside_temperature()] * len(unoms)
+        t_outside = get_weather_forecast()
 
-            # Получаем предсказания
-            catboost_model = CatBoostModel(database, type_description_dict, material_parameters_dict, model_path='./configs/catboost_for_house_cooling.cbm')
-            data_for_catboost = catboost_model.prepare_data_for_catboost(unoms, t_inside, t_outside)
-            catboost_predictions = catboost_model.get_catboost_predictions(data_for_catboost)
-            df_sorted = catboost_model.get_final_ranking(catboost_predictions)
+        # Получаем предсказания
+        catboost_model = CatBoostModel(database, type_description_dict, material_parameters_dict,
+                                       model_path='./models/catboost_for_house_cooling.cbm')
+        data_for_catboost = catboost_model.prepare_data_for_catboost(unoms, t_inside, t_outside)
+        catboost_predictions = catboost_model.get_catboost_predictions(data_for_catboost)
+        df_sorted = catboost_model.get_final_ranking(catboost_predictions)
 
-            return df_sorted.to_dict(orient='records')
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
-        finally:
-            conn.close()
+        return df_sorted.to_dict(orient='records')
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+
+def time_count(row):
+    conn = connect_to_db()
+    specific_date = datetime.datetime(2024, 1, 1)
+
+    stat_data = get_stats_from_bd(specific_date, conn)
+    T1 = float(stat_data["weather1"])  # температура снаружи дома
+
+    ro = 1.225  # плотность воздуха
+    c = 1005  # теплоемкость воздуха
+    T0 = 22  # температура внутри дома
+    V = float(row["V"])
+    alpha = float(row["alpha"])
+    A = float(row["A"])
+    T2 = 18  # температура в доме через time часов
+
+    if T1 > 18:
+        time = 999999
+    else:
+        time = ((math.log((T0 - T1) / (T2 - T1)) * c * ro * V) / (alpha * A)) / 3600
+        time *= 1000
+    return int(time)
 
 
 type_description_file_path = "./configs/type_descriptions.json"
@@ -1799,6 +1847,5 @@ with open(type_description_file_path, 'r', encoding='utf-8') as file:
 with open(material_parameters_file_path, 'r', encoding='utf-8') as file:
     material_parameters_dict = json.load(file)
 
-
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.runда(app, host="0.0.0.0", port=8000)
